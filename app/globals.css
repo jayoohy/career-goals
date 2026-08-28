@@ -1,0 +1,38 @@
+@import 'tailwindcss';
+
+/*
+ * Theme tokens ported from legacy-expo-src/constants/theme.ts (Colors.light / Colors.dark).
+ * Task 3.1 will expand this into the full themed-component system; this is the base palette
+ * so the scaffold renders with correct colors from day one.
+ */
+:root {
+  --color-text: #000000;
+  --color-background: #ffffff;
+  --color-background-element: #f0f0f3;
+  --color-background-selected: #e0e1e6;
+  --color-text-secondary: #60646c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-text: #ffffff;
+    --color-background: #000000;
+    --color-background-element: #212225;
+    --color-background-selected: #2e3135;
+    --color-text-secondary: #b0b4ba;
+  }
+}
+
+@theme inline {
+  --color-text: var(--color-text);
+  --color-background: var(--color-background);
+  --color-background-element: var(--color-background-element);
+  --color-background-selected: var(--color-background-selected);
+  --color-text-secondary: var(--color-text-secondary);
+  --max-content-width: 800px;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-text);
+}
