@@ -94,6 +94,19 @@
 
   Build/lint/tests re-verified clean after the cleanup (31/31 tests, all 19 routes build).
 - [ ] 7.0 Deploy to Vercel and verify end-to-end (install, offline, push) on Joy's iPhone
+- [ ] 8.0 UX redesign + bug fixes from first real-use feedback
+  - [ ] 8.1 Design tokens: new color palette (green primary / amber streak accent, light+dark), Poppins/Open Sans, spacing/radius scale
+  - [ ] 8.2 Replace floating top pill nav with a proper bottom tab bar (icon+label, safe-area padding, fixes clipping/overflow/text-bleed-through)
+  - [ ] 8.3 Data model: `CourseLesson` (per-video checklist), `CourseMeta` (link/tutor/description), multi-session `DailyLog` — Dexie schema v2 + migration
+  - [ ] 8.4 Fix: logging time against a section auto-sets it to in_progress; drives per-lesson/derived section status instead of manual cycling
+  - [ ] 8.5 Redesign Course tab: course header (link/tutor/description) + section list with real progress (not blank), lesson checklist screen per section
+  - [ ] 8.6 Redesign daily-log flow: additive sessions, clearer step-by-step UI instead of one crowded modal
+  - [ ] 8.7 Quiz flow: confirm-and-complete (separate page, not inline), plus a time-covered nudge when logged minutes reach a section's length without manual completion
+  - [ ] 8.8 Redesign Roadmap tab for clarity + a visible link back to "Layer 1 — the course" at the top
+  - [ ] 8.9 Fix Progress tab's Layer 1 bar (was blank due to 8.4's bug) and give it a real visual pass
+  - [ ] 8.10 Onboarding flow: welcome → what-this-does (brief) → enable-notifications, shown once before the app opens to Today
+  - [ ] 8.11 Simplify Settings copy (window start/end/hard deadline → plain language)
+  - [ ] 8.12 Full pass: verify build/lint/tests, then a fresh read-through for any remaining rough edges
   - [ ] 7.1 Connect the repo to a Vercel project; configure environment variables (VAPID private key, Upstash credentials, shared-secret token)
   - [ ] 7.2 Deploy to production and confirm the build succeeds
   - [ ] 7.3 Install to the iPhone home screen from the live URL and verify standalone display mode

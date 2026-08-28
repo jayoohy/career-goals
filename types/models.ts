@@ -5,10 +5,33 @@ export interface CourseSection {
   title: string;
   videoCount: number;
   durationMinutes: number;
+  /**
+   * Auto-managed, not user-set directly (see courseSectionService.recomputeSectionStatus):
+   * derived from lesson completion and logged time, except 'skipped' which is an explicit,
+   * separate user action. There's no "tap to cycle through states" control anymore — that was
+   * confusing (users could accidentally cycle a whole section to "done" without doing the work).
+   */
   status: CourseSectionStatus;
   skimFlag: boolean;
   sortOrder: number;
   notes: string | null;
+}
+
+/** One video/lecture within a CourseSection — the actual unit of progress (a section can have 40+). */
+export interface CourseLesson {
+  id: string;
+  sectionId: string;
+  title: string;
+  order: number;
+  done: boolean;
+}
+
+/** Singleton (id: 1) — course-level info shown on the Course tab header. */
+export interface CourseMeta {
+  title: string;
+  tutor: string;
+  url: string;
+  description: string;
 }
 
 export type RoadmapSource = 'fastai' | 'cs231n' | 'coursera' | 'project' | 'career' | 'reference';
@@ -41,12 +64,18 @@ export interface RoadmapItem {
 export type DailyLogType = 'studied' | 'rest' | 'missed';
 export type LinkedItemKind = 'course_section' | 'roadmap_item';
 
+/** One logged study session. A day can have several — logging more time later the same day adds a session rather than overwriting the first. */
+export interface StudySession {
+  linkedItemId: string;
+  linkedItemKind: LinkedItemKind;
+  durationMinutes: number;
+  loggedAt: string; // ISO timestamp — for ordering/display within the day
+}
+
 export interface DailyLog {
   date: string; // YYYY-MM-DD, local day, primary key
   type: DailyLogType;
-  linkedItemId: string | null;
-  linkedItemKind: LinkedItemKind | null;
-  durationMinutes: number | null;
+  sessions: StudySession[]; // empty for rest/missed days
   notes: string | null;
 }
 

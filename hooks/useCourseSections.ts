@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { getAllCourseSections, updateCourseSectionStatus } from '@/services/courseSectionService';
-import type { CourseSection, CourseSectionStatus } from '@/types/models';
+import { getAllCourseSections, skipSection } from '@/services/courseSectionService';
+import type { CourseSection } from '@/types/models';
 
 export function useCourseSections() {
   const [sections, setSections] = useState<CourseSection[]>([]);
@@ -22,13 +22,13 @@ export function useCourseSections() {
     refresh();
   }, [refresh]);
 
-  const setStatus = useCallback(
-    async (id: string, status: CourseSectionStatus) => {
-      await updateCourseSectionStatus(id, status);
+  const skip = useCallback(
+    async (id: string) => {
+      await skipSection(id);
       await refresh();
     },
     [refresh],
   );
 
-  return { sections, loading, refresh, setStatus };
+  return { sections, loading, refresh, skip };
 }

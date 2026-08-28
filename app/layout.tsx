@@ -22,8 +22,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+    { media: '(prefers-color-scheme: dark)', color: '#121212' },
   ],
+  viewportFit: 'cover', // required for env(safe-area-inset-*) to resolve on iOS
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -32,8 +33,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <AppInit>
           <JobReadyNotifier />
+          <div
+            className="pt-6"
+            style={{ paddingBottom: 'calc(var(--nav-height) + env(safe-area-inset-bottom))' }}
+          >
+            {children}
+          </div>
           <NavTabs />
-          <div className="pt-20">{children}</div>
         </AppInit>
       </body>
     </html>

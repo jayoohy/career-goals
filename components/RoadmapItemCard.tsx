@@ -45,50 +45,56 @@ export function RoadmapItemCard({
   onMoveDown,
 }: RoadmapItemCardProps) {
   return (
-    <div className="flex flex-col gap-2 rounded-2xl bg-background-element p-4">
+    <div className="flex flex-col gap-2 rounded-2xl bg-surface p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="min-w-0 shrink text-sm font-bold">{item.title}</span>
+        <span className="rounded-full bg-surface-strong px-2 py-0.5 text-xs font-semibold text-text-secondary">
+          {GROUP_LABEL[item.sectionGroup]}
+        </span>
         {item.jobReadyThreshold && (
-          <span className="rounded-full bg-background-selected px-2 py-0.5 text-sm">floor</span>
+          <span className="rounded-full bg-streak px-2 py-0.5 text-xs font-semibold text-on-streak">floor</span>
         )}
         {item.isOngoing && (
-          <span className="rounded-full bg-background-selected px-2 py-0.5 text-sm">ongoing</span>
+          <span className="rounded-full bg-surface-strong px-2 py-0.5 text-xs font-semibold text-text-secondary">
+            ongoing
+          </span>
         )}
       </div>
 
-      <p className="text-sm text-text-secondary">
-        {GROUP_LABEL[item.sectionGroup]} · ~{item.estimatedHours}h
-      </p>
-
+      <p className="font-heading font-semibold">{item.title}</p>
+      <p className="text-sm text-text-secondary">~{item.estimatedHours}h</p>
       <p className="text-sm">{item.description}</p>
 
-      <div className="flex items-center gap-4">
+      <div className="mt-1 flex items-center gap-4">
         <button
           onClick={() => onStatusChange(NEXT_STATUS[item.status])}
-          className="rounded-full bg-background-selected px-4 py-1 text-sm"
+          className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
+            item.status === 'done' ? 'bg-surface-strong' : 'bg-primary text-on-primary'
+          }`}
         >
           {STATUS_LABEL[item.status]}
         </button>
 
         {unlocked && item.status !== 'deferred' && (
-          <button onClick={onDefer} className="text-sm text-text-secondary">
+          <button onClick={onDefer} className="text-sm text-text-secondary underline">
             Defer
           </button>
         )}
 
         {unlocked && (
-          <div className="ml-auto flex gap-2">
+          <div className="ml-auto flex gap-3">
             <button
               disabled={isFirst}
               onClick={onMoveUp}
-              className={`text-sm ${isFirst ? 'text-text-secondary' : 'text-text'}`}
+              aria-label="Move up"
+              className={`text-lg ${isFirst ? 'text-text-secondary' : 'text-text'}`}
             >
               ↑
             </button>
             <button
               disabled={isLast}
               onClick={onMoveDown}
-              className={`text-sm ${isLast ? 'text-text-secondary' : 'text-text'}`}
+              aria-label="Move down"
+              className={`text-lg ${isLast ? 'text-text-secondary' : 'text-text'}`}
             >
               ↓
             </button>

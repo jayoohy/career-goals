@@ -1,5 +1,6 @@
 'use client';
 
+import { FlameIcon } from '@/components/icons';
 import { streakBreakLine } from '@/constants/copy';
 import type { StreakState } from '@/types/models';
 
@@ -18,20 +19,26 @@ export function StreakBadge({ streak, onAcknowledgeBreak }: StreakBadgeProps) {
     return (
       <button
         onClick={onAcknowledgeBreak}
-        className="flex flex-col gap-0.5 rounded-2xl bg-background-element px-4 py-2 text-left"
+        className="flex items-center gap-3 rounded-2xl bg-surface px-4 py-3 text-left"
       >
-        <span className="text-sm font-bold">{streakBreakLine(streak.longestStreak)}</span>
-        <span className="text-sm text-text-secondary">Tap to dismiss</span>
+        <FlameIcon className="h-7 w-7 text-text-secondary" />
+        <div>
+          <p className="font-heading font-semibold">{streakBreakLine(streak.longestStreak)}</p>
+          <p className="text-sm text-text-secondary">Tap to dismiss</p>
+        </div>
       </button>
     );
   }
 
   return (
-    <div className="flex flex-col gap-0.5 rounded-2xl bg-background-element px-4 py-2">
-      <span className="text-sm font-bold">
-        {streak.currentStreak} day{streak.currentStreak === 1 ? '' : 's'} current
-      </span>
-      <span className="text-sm text-text-secondary">Longest: {streak.longestStreak}</span>
+    <div className="flex items-center gap-3 rounded-2xl bg-surface px-4 py-3">
+      <FlameIcon className="h-7 w-7 text-streak" />
+      <div>
+        <p className="font-heading font-semibold">
+          {streak.currentStreak} day{streak.currentStreak === 1 ? '' : 's'} streak
+        </p>
+        <p className="text-sm text-text-secondary">Longest: {streak.longestStreak}</p>
+      </div>
     </div>
   );
 }

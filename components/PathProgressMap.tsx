@@ -9,14 +9,14 @@ interface PathProgressMapProps {
 }
 
 const DOT_CLASS: Record<Waypoint['state'], string> = {
-  done: 'bg-text',
-  current: 'border-2 border-text bg-transparent',
-  upcoming: 'bg-background-selected',
+  done: 'bg-primary',
+  current: 'border-2 border-primary bg-background',
+  upcoming: 'bg-surface-strong',
 };
 
 const LABEL_CLASS: Record<Waypoint['state'], string> = {
-  done: 'font-bold text-text',
-  current: 'font-bold text-text',
+  done: 'font-semibold text-text',
+  current: 'font-semibold text-text',
   upcoming: 'text-text-secondary',
 };
 
@@ -44,12 +44,10 @@ export function PathProgressMap({ courseComplete, jobReady }: PathProgressMapPro
           <div className="flex w-6 flex-col items-center">
             <span className={`h-3.5 w-3.5 shrink-0 rounded-full ${DOT_CLASS[waypoint.state]}`} />
             {index < waypoints.length - 1 && (
-              <span className="min-h-6 w-0.5 grow bg-background-selected" />
+              <span className="min-h-6 w-0.5 grow bg-surface-strong" />
             )}
           </div>
-          <span className={`pb-6 pl-2 text-sm ${LABEL_CLASS[waypoint.state]}`}>
-            {waypoint.label}
-          </span>
+          <span className={`pb-6 pl-2 text-sm ${LABEL_CLASS[waypoint.state]}`}>{waypoint.label}</span>
         </div>
       ))}
     </div>

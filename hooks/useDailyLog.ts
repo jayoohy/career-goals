@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import {
+  addStudySession,
   createRestLog,
-  createStudiedLog,
   getLogForDate,
   getTotalStudiedMinutes,
-  type CreateStudiedLogInput,
+  meetsStudiedFloor,
+  type AddStudySessionInput,
 } from '@/services/dailyLogService';
 import {
   canUseRestDay,
@@ -46,11 +47,14 @@ export function useDailyLog() {
     refresh();
   }, [refresh]);
 
-  const markStudied = useCallback(
-    async (input: Omit<CreateStudiedLogInput, 'date'>) => {
-      const log = await createStudiedLog({ ...input, date: todayLocalDate() });
-      await recordStudiedOrRestDay(log.date);
-      await syncDayLogged(log.date); // best-effort — see logSyncService.ts
+  /** Adds a study session to today (there can be more than one — see dailyLogService). Only records the streak/day-status once today's total crosses the 10-minute floor. */
+  const addSession = useCallback(
+    async (input: Omit<AddStudySessionInput, 'date'>) => {
+      const log = await addStudySession({ ...input, date: todayLocalDate() });
+      if (meetsStudiedFloor(log)) {
+        await recordStudiedOrRestDay(log.date);
+        await syncDayLogged(log.date); // best-effort — see logSyncService.ts
+      }
       await refresh();
       return log;
     },
@@ -84,7 +88,7 @@ export function useDailyLog() {
     totalStudiedMinutes,
     loading,
     refresh,
-    markStudied,
+    addSession,
     markRest,
     updateRestDayCap,
   };

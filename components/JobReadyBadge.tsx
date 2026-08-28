@@ -14,9 +14,9 @@ export function JobReadyBadge({ jobReady }: JobReadyBadgeProps) {
   }
 
   return (
-    <div className="flex flex-col gap-1 rounded-2xl bg-background-selected p-4">
-      <p className="text-sm font-bold">{JOB_READY_COPY.title}</p>
-      <p className="text-sm text-text-secondary">{JOB_READY_COPY.body}</p>
+    <div className="flex flex-col gap-1 rounded-2xl bg-streak p-4 text-on-streak">
+      <p className="font-heading font-semibold">{JOB_READY_COPY.title}</p>
+      <p className="text-sm opacity-90">{JOB_READY_COPY.body}</p>
     </div>
   );
 }

@@ -1,38 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Open+Sans:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 
 /*
- * Theme tokens ported from legacy-expo-src/constants/theme.ts (Colors.light / Colors.dark).
- * Task 3.1 will expand this into the full themed-component system; this is the base palette
- * so the scaffold renders with correct colors from day one.
+ * Design tokens — Duolingo-adjacent: bold flat color, generous rounding, one confident accent.
+ * Green is the brand/action color (buttons, active states, success); amber is reserved for
+ * streaks/flames specifically, mirroring the green-CTA / orange-streak split most habit apps
+ * use. Dark mode is a separate hand-tuned palette (not an inversion) per standard guidance.
  */
 :root {
-  --color-text: #000000;
+  --color-primary: #059669;
+  --color-primary-hover: #047857;
+  --color-on-primary: #ffffff;
+  --color-streak: #d97706;
+  --color-on-streak: #ffffff;
+
   --color-background: #ffffff;
-  --color-background-element: #f0f0f3;
-  --color-background-selected: #e0e1e6;
-  --color-text-secondary: #60646c;
+  --color-surface: #fdf8f0;
+  --color-surface-strong: #fbeed8;
+  --color-text: #1c1917;
+  --color-text-secondary: #78716c;
+  --color-border: #eee4d5;
+  --color-destructive: #dc2626;
+
+  --font-heading: 'Poppins', system-ui, sans-serif;
+  --font-body: 'Open Sans', system-ui, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-text: #ffffff;
-    --color-background: #000000;
-    --color-background-element: #212225;
-    --color-background-selected: #2e3135;
-    --color-text-secondary: #b0b4ba;
+    --color-primary: #10b981;
+    --color-primary-hover: #34d399;
+    --color-on-primary: #052e22;
+    --color-streak: #f59e0b;
+    --color-on-streak: #2b1a00;
+
+    --color-background: #121212;
+    --color-surface: #1e1e1e;
+    --color-surface-strong: #2a2a2a;
+    --color-text: #f5f5f4;
+    --color-text-secondary: #a8a29e;
+    --color-border: #333333;
+    --color-destructive: #f87171;
   }
 }
 
 @theme inline {
-  --color-text: var(--color-text);
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-on-primary: var(--color-on-primary);
+  --color-streak: var(--color-streak);
+  --color-on-streak: var(--color-on-streak);
   --color-background: var(--color-background);
-  --color-background-element: var(--color-background-element);
-  --color-background-selected: var(--color-background-selected);
+  --color-surface: var(--color-surface);
+  --color-surface-strong: var(--color-surface-strong);
+  --color-text: var(--color-text);
   --color-text-secondary: var(--color-text-secondary);
-  --max-content-width: 800px;
+  --color-border: var(--color-border);
+  --color-destructive: var(--color-destructive);
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+  --max-content-width: 640px;
+  /* Bottom tab bar height + safe-area inset — pages reserve this as bottom padding (fixed-element-offset). */
+  --nav-height: 76px;
 }
 
 body {
   background: var(--color-background);
   color: var(--color-text);
+  font-family: var(--font-body);
+}
+
+h1,
+h2,
+h3,
+.font-heading {
+  font-family: var(--font-heading);
 }

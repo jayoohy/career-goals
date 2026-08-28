@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { getAllCourseSections } from '@/services/courseSectionService';
-import { getLogsInRange } from '@/services/dailyLogService';
+import { getLogsInRange, totalMinutesForLog } from '@/services/dailyLogService';
 import { getLatestFlaggedAttempts } from '@/services/quizService';
 import { getAllRoadmapItems, isRoadmapUnlocked } from '@/services/roadmapService';
 import type { QuizAttempt } from '@/types/models';
@@ -42,7 +42,7 @@ export function useWeeklyReview() {
       const daysLogged = logs.filter((log) => log.type === 'studied' || log.type === 'rest').length;
       const totalMinutes = logs
         .filter((log) => log.type === 'studied')
-        .reduce((sum, log) => sum + (log.durationMinutes ?? 0), 0);
+        .reduce((sum, log) => sum + totalMinutesForLog(log), 0);
 
       let whatsNextLabel: string | null = null;
       const nextSection = sections.find((s) => s.status !== 'done' && s.status !== 'skipped');

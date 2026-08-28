@@ -40,8 +40,8 @@ export function QuizPlayer({ questions, onSubmit }: QuizPlayerProps) {
   return (
     <div className="flex flex-col gap-4">
       {questions.map((question, qIndex) => (
-        <div key={question.id} className="flex flex-col gap-2 rounded-2xl bg-background-element p-4">
-          <p className="text-sm font-bold">{question.prompt}</p>
+        <div key={question.id} className="flex flex-col gap-2 rounded-2xl bg-surface p-4">
+          <p className="font-heading font-semibold">{question.prompt}</p>
           {question.options.map((option, oIndex) => {
             const isSelected = answers[qIndex] === oIndex;
             const isCorrect = result && oIndex === question.correctIndex;
@@ -50,9 +50,9 @@ export function QuizPlayer({ questions, onSubmit }: QuizPlayerProps) {
               <button
                 key={oIndex}
                 onClick={() => selectAnswer(qIndex, oIndex)}
-                className={`rounded-lg p-2 text-left text-sm ${isSelected ? 'bg-background-selected' : 'bg-background'} ${
-                  isCorrect ? 'border border-[#3ba55c]' : ''
-                } ${isWrongSelected ? 'border border-[#e5534b]' : ''}`}
+                className={`rounded-xl p-3 text-left text-sm ${isSelected ? 'bg-primary text-on-primary' : 'bg-background'} ${
+                  isCorrect ? 'border-2 border-primary' : ''
+                } ${isWrongSelected ? 'border-2 border-destructive' : ''}`}
               >
                 {option}
               </button>
@@ -66,13 +66,13 @@ export function QuizPlayer({ questions, onSubmit }: QuizPlayerProps) {
         <button
           disabled={!allAnswered || submitting}
           onClick={handleSubmit}
-          className={`rounded-2xl p-4 text-center text-sm font-bold disabled:opacity-50 ${allAnswered ? 'bg-background-selected' : 'bg-background-element'}`}
+          className={`rounded-2xl p-4 text-center font-heading font-semibold disabled:opacity-50 ${allAnswered ? 'bg-primary text-on-primary' : 'bg-surface'}`}
         >
           Submit quiz
         </button>
       ) : (
-        <div className="flex flex-col gap-1 rounded-2xl bg-background-element p-4">
-          <p className="text-sm font-bold">
+        <div className="flex flex-col gap-1 rounded-2xl bg-surface p-4">
+          <p className="font-heading font-semibold">
             {result.correctCount}/{result.totalQuestions} correct
           </p>
           {result.flaggedForReview && (

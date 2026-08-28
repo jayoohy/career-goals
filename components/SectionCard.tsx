@@ -18,30 +18,37 @@ function formatDuration(minutes: number): string {
 interface SectionCardProps {
   section: CourseSection;
   onPress: () => void;
+  /** Lessons done / total — real per-video progress, shown as a bar instead of just a status word. */
+  lessonProgress: { done: number; total: number };
   /** True when the section's latest quiz attempt is flagged for review (§7.1) — informational only, never gating. */
   flagged?: boolean;
 }
 
-export function SectionCard({ section, onPress, flagged }: SectionCardProps) {
+export function SectionCard({ section, onPress, lessonProgress, flagged }: SectionCardProps) {
+  const percent =
+    lessonProgress.total > 0 ? Math.round((lessonProgress.done / lessonProgress.total) * 100) : 0;
+
   return (
     <button
       onClick={onPress}
-      className="flex w-full flex-col gap-1 rounded-2xl bg-background-element p-4 text-left hover:opacity-90"
+      className="flex w-full flex-col gap-2 rounded-2xl bg-surface p-4 text-left active:scale-[0.99]"
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="min-w-0 shrink truncate text-sm font-bold">{section.title}</span>
-        {section.skimFlag && <span className="text-sm text-text-secondary">skim</span>}
+        <span className="min-w-0 shrink truncate font-heading font-semibold">{section.title}</span>
         {flagged && (
-          <span className="rounded-full bg-background-selected px-2 py-0.5 text-sm">
+          <span className="shrink-0 rounded-full bg-surface-strong px-2 py-0.5 text-xs font-semibold">
             worth a revisit
           </span>
         )}
       </div>
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-sm text-text-secondary">
-          {section.videoCount} videos · {formatDuration(section.durationMinutes)}
+      <div className="h-2 overflow-hidden rounded-full bg-surface-strong">
+        <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${percent}%` }} />
+      </div>
+      <div className="flex items-center justify-between gap-2 text-sm text-text-secondary">
+        <span>
+          {lessonProgress.done}/{lessonProgress.total} videos · {formatDuration(section.durationMinutes)}
         </span>
-        <span className="text-sm text-text-secondary">{STATUS_LABEL[section.status]}</span>
+        <span>{STATUS_LABEL[section.status]}</span>
       </div>
     </button>
   );

@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 
+import { BookIcon, ChevronLeftIcon, CloseIcon, MoonIcon } from '@/components/icons';
 import { RestDayIndicator } from '@/components/RestDayIndicator';
-import { MIN_STUDIED_MINUTES } from '@/services/dailyLogService';
 import type { CourseSection, LinkedItemKind, RestDayBudget, RoadmapItem } from '@/types/models';
 
 interface SelectableItem {
@@ -15,10 +15,11 @@ interface SelectableItem {
 interface DailyLogModalProps {
   open: boolean;
   onClose: () => void;
+  hasSessionsToday: boolean;
   courseSections: CourseSection[];
   roadmapItems: RoadmapItem[];
   restBudget: RestDayBudget | null;
-  onMarkStudied: (input: {
+  onAddSession: (input: {
     linkedItemId: string;
     linkedItemKind: LinkedItemKind;
     durationMinutes: number;
@@ -26,19 +27,28 @@ interface DailyLogModalProps {
   onMarkRest: () => Promise<unknown>;
 }
 
-/** Logging UI for today (studied/rest). Enforces the 10-min floor and the rest-day cap at the UI layer, on top of the service-layer validation. */
+type Step = 'choose' | 'pick-item' | 'duration' | 'rest-confirm';
+
+const DURATION_CHOICES = [10, 20, 30, 45, 60];
+
+/**
+ * A short, one-decision-per-screen flow instead of one crowded form (the earlier version showed
+ * every option and a bare number field at once). Sessions are additive — this can be opened
+ * again the same day to log more time; it never overwrites what's already logged.
+ */
 export function DailyLogModal({
   open,
   onClose,
+  hasSessionsToday,
   courseSections,
   roadmapItems,
   restBudget,
-  onMarkStudied,
+  onAddSession,
   onMarkRest,
 }: DailyLogModalProps) {
-  const [mode, setMode] = useState<'studied' | 'rest'>('studied');
+  const [step, setStep] = useState<Step>('choose');
   const [selected, setSelected] = useState<SelectableItem | null>(null);
-  const [durationText, setDurationText] = useState('');
+  const [customMinutes, setCustomMinutes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,22 +56,15 @@ export function DailyLogModal({
     return null;
   }
 
-  const selectableItems: SelectableItem[] = [
-    ...courseSections
-      .filter((s) => s.status !== 'done' && s.status !== 'skipped')
-      .map((s) => ({ id: s.id, kind: 'course_section' as const, label: s.title })),
-    ...roadmapItems
-      .filter((r) => r.status !== 'done' && r.status !== 'deferred')
-      .map((r) => ({ id: r.id, kind: 'roadmap_item' as const, label: r.title })),
-  ];
-
+  const activeSections = courseSections.filter((s) => s.status !== 'done' && s.status !== 'skipped');
+  const activeRoadmapItems = roadmapItems.filter((r) => r.status !== 'done' && r.status !== 'deferred');
   const restDaysRemaining = restBudget ? restBudget.cap - restBudget.usedCount : 0;
 
   function reset() {
+    setStep('choose');
     setSelected(null);
-    setDurationText('');
+    setCustomMinutes('');
     setError(null);
-    setMode('studied');
   }
 
   function handleClose() {
@@ -69,111 +72,194 @@ export function DailyLogModal({
     onClose();
   }
 
-  async function handleSubmitStudied() {
-    const duration = parseInt(durationText, 10);
-    if (!selected) {
-      setError('Pick what you worked on.');
-      return;
-    }
-    if (Number.isNaN(duration) || duration < MIN_STUDIED_MINUTES) {
-      setError(`Needs at least ${MIN_STUDIED_MINUTES} minutes.`);
-      return;
-    }
+  async function submitDuration(minutes: number) {
+    if (!selected) return;
     setSubmitting(true);
     setError(null);
     try {
-      await onMarkStudied({
+      await onAddSession({
         linkedItemId: selected.id,
         linkedItemKind: selected.kind,
-        durationMinutes: duration,
+        durationMinutes: minutes,
       });
       handleClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not log today.');
+      setError(e instanceof Error ? e.message : 'Could not log that session.');
     } finally {
       setSubmitting(false);
     }
   }
 
-  async function handleSubmitRest() {
+  async function handleConfirmRest() {
     setSubmitting(true);
     setError(null);
     try {
       await onMarkRest();
       handleClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not mark rest day.');
+      setError(e instanceof Error ? e.message : 'Could not mark today as rest.');
     } finally {
       setSubmitting(false);
     }
   }
 
+  const title =
+    step === 'choose'
+      ? hasSessionsToday
+        ? 'Log more time'
+        : "What's today?"
+      : step === 'pick-item'
+        ? 'What did you work on?'
+        : step === 'duration'
+          ? 'How long?'
+          : 'Rest day';
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
       <div className="flex max-h-[85%] w-full max-w-(--max-content-width) flex-col gap-4 overflow-y-auto rounded-t-3xl bg-background p-6 sm:rounded-3xl">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">Log today</h2>
-          <button onClick={handleClose} className="text-sm text-text-secondary">
-            Close
+        <div className="flex items-center gap-3">
+          {step !== 'choose' && (
+            <button
+              onClick={() => setStep(step === 'duration' ? 'pick-item' : 'choose')}
+              aria-label="Back"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface"
+            >
+              <ChevronLeftIcon className="h-5 w-5" />
+            </button>
+          )}
+          <h2 className="flex-1 font-heading text-xl font-semibold">{title}</h2>
+          <button
+            onClick={handleClose}
+            aria-label="Close"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface"
+          >
+            <CloseIcon className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="flex gap-2">
-          <button
-            onClick={() => setMode('studied')}
-            className={`rounded-full px-4 py-2 text-sm font-bold ${mode === 'studied' ? 'bg-background-selected' : 'bg-background-element'}`}
-          >
-            Studied
-          </button>
-          <button
-            onClick={() => setMode('rest')}
-            className={`rounded-full px-4 py-2 text-sm font-bold ${mode === 'rest' ? 'bg-background-selected' : 'bg-background-element'}`}
-          >
-            Rest
-          </button>
-        </div>
+        {step === 'choose' && (
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => setStep('pick-item')}
+              className="flex items-center gap-4 rounded-2xl border-2 border-border bg-surface p-4 text-left active:scale-[0.98]"
+            >
+              <BookIcon className="h-8 w-8 text-primary" />
+              <div>
+                <p className="font-heading font-semibold">I studied</p>
+                <p className="text-sm text-text-secondary">Log time against a section or item</p>
+              </div>
+            </button>
+            {!hasSessionsToday && (
+              <button
+                onClick={() => setStep('rest-confirm')}
+                className="flex items-center gap-4 rounded-2xl border-2 border-border bg-surface p-4 text-left active:scale-[0.98]"
+              >
+                <MoonIcon className="h-8 w-8 text-streak" />
+                <div>
+                  <p className="font-heading font-semibold">Rest day</p>
+                  <p className="text-sm text-text-secondary">Doesn&apos;t break your streak</p>
+                </div>
+              </button>
+            )}
+          </div>
+        )}
 
-        {mode === 'studied' ? (
-          <>
-            <div className="max-h-60 overflow-y-auto">
-              {selectableItems.map((item) => (
+        {step === 'pick-item' && (
+          <div className="flex flex-col gap-4 overflow-y-auto">
+            {activeSections.length > 0 && (
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                  Course
+                </p>
+                <div className="flex flex-col gap-2">
+                  {activeSections.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => {
+                        setSelected({ id: s.id, kind: 'course_section', label: s.title });
+                        setStep('duration');
+                      }}
+                      className="rounded-xl bg-surface p-3 text-left text-sm"
+                    >
+                      {s.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {activeRoadmapItems.length > 0 && (
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                  Roadmap
+                </p>
+                <div className="flex flex-col gap-2">
+                  {activeRoadmapItems.map((r) => (
+                    <button
+                      key={r.id}
+                      onClick={() => {
+                        setSelected({ id: r.id, kind: 'roadmap_item', label: r.title });
+                        setStep('duration');
+                      }}
+                      className="rounded-xl bg-surface p-3 text-left text-sm"
+                    >
+                      {r.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {step === 'duration' && selected && (
+          <div className="flex flex-col gap-4">
+            <p className="text-sm text-text-secondary">{selected.label}</p>
+            <div className="flex flex-wrap gap-2">
+              {DURATION_CHOICES.map((minutes) => (
                 <button
-                  key={`${item.kind}-${item.id}`}
-                  onClick={() => setSelected(item)}
-                  className={`mb-1 w-full rounded-lg p-2 text-left text-sm ${selected?.id === item.id && selected?.kind === item.kind ? 'bg-background-selected' : 'bg-background-element'}`}
+                  key={minutes}
+                  disabled={submitting}
+                  onClick={() => submitDuration(minutes)}
+                  className="rounded-full bg-primary px-5 py-3 font-heading font-semibold text-on-primary disabled:opacity-50"
                 >
-                  {item.label}
+                  {minutes} min
                 </button>
               ))}
             </div>
-            <input
-              value={durationText}
-              onChange={(e) => setDurationText(e.target.value)}
-              placeholder="Minutes (min 10)"
-              inputMode="numeric"
-              className="rounded-lg border border-background-selected bg-transparent p-2 text-text"
-            />
-            {error && <p className="text-sm text-text-secondary">{error}</p>}
-            <button
-              disabled={submitting}
-              onClick={handleSubmitStudied}
-              className="rounded-2xl bg-background-selected p-4 text-center text-sm font-bold disabled:opacity-50"
-            >
-              Log studied day
-            </button>
-          </>
-        ) : (
-          <>
+            <div className="flex items-center gap-2">
+              <input
+                value={customMinutes}
+                onChange={(e) => setCustomMinutes(e.target.value)}
+                placeholder="Custom minutes"
+                inputMode="numeric"
+                className="min-h-11 flex-1 rounded-xl border border-border bg-transparent px-3 text-text"
+              />
+              <button
+                disabled={submitting || !customMinutes}
+                onClick={() => submitDuration(parseInt(customMinutes, 10))}
+                className="min-h-11 rounded-xl bg-surface-strong px-4 text-sm font-semibold disabled:opacity-50"
+              >
+                Log it
+              </button>
+            </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+          </div>
+        )}
+
+        {step === 'rest-confirm' && (
+          <div className="flex flex-col gap-4">
             <RestDayIndicator budget={restBudget} />
-            {error && <p className="text-sm text-text-secondary">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
             <button
               disabled={submitting || restDaysRemaining <= 0}
-              onClick={handleSubmitRest}
-              className={`rounded-2xl p-4 text-center text-sm font-bold disabled:opacity-50 ${restDaysRemaining <= 0 ? 'bg-background-element' : 'bg-background-selected'}`}
+              onClick={handleConfirmRest}
+              className={`min-h-11 rounded-2xl p-4 text-center font-heading font-semibold disabled:opacity-50 ${
+                restDaysRemaining <= 0 ? 'bg-surface text-text-secondary' : 'bg-primary text-on-primary'
+              }`}
             >
-              {restDaysRemaining <= 0 ? 'No rest days left' : 'Mark today as rest'}
+              {restDaysRemaining <= 0 ? 'No rest days left this month' : 'Confirm rest day'}
             </button>
-          </>
+          </div>
         )}
       </div>
     </div>
