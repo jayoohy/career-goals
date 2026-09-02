@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { RoadmapItemCard } from '@/components/RoadmapItemCard';
+import { RoadmapStep } from '@/components/RoadmapStep';
 import { useCourseSections } from '@/hooks/useCourseSections';
 import { useRoadmap } from '@/hooks/useRoadmap';
 
@@ -16,6 +17,8 @@ export default function RoadmapPage() {
   const [newDescription, setNewDescription] = useState('');
 
   const courseDone = sections.filter((s) => s.status === 'done' || s.status === 'skipped').length;
+  const nextUpId = items.find((item) => item.status !== 'done' && item.status !== 'deferred')?.id;
+  const doneCount = items.filter((item) => item.status === 'done').length;
 
   function moveItem(index: number, direction: -1 | 1) {
     const targetIndex = index + direction;
@@ -43,7 +46,7 @@ export default function RoadmapPage() {
     <main className="mx-auto flex max-w-(--max-content-width) flex-col gap-4 px-6 pb-10">
       <h1 className="-mb-2 font-heading text-3xl font-bold">Roadmap</h1>
       <p className="text-sm text-text-secondary">
-        Everything after the course — what comes next on the way to CV/robotics engineer.
+        Your route to CV / robotics engineer — {doneCount} of {items.length} steps done.
       </p>
 
       <button
@@ -62,24 +65,33 @@ export default function RoadmapPage() {
 
       {!unlocked && (
         <p className="text-sm text-text-secondary">
-          Reordering unlocks once the course is complete — you can still work items in order below.
+          You can reorder these once the course is done. For now, work them top to bottom.
         </p>
       )}
 
-      {items.map((item, index) => (
-        <RoadmapItemCard
-          key={item.id}
-          item={item}
-          unlocked={unlocked}
-          isFirst={index === 0}
-          isLast={index === items.length - 1}
-          onStatusChange={(next) => setStatus(item.id, next)}
-          onDefer={() => defer(item.id)}
-          onDelete={() => remove(item.id)}
-          onMoveUp={() => moveItem(index, -1)}
-          onMoveDown={() => moveItem(index, 1)}
-        />
-      ))}
+      <div className="flex flex-col">
+        {items.map((item, index) => (
+          <RoadmapStep
+            key={item.id}
+            number={index + 1}
+            state={item.status === 'done' ? 'done' : item.id === nextUpId ? 'next' : 'todo'}
+            isLast={index === items.length - 1}
+          >
+            <RoadmapItemCard
+              item={item}
+              unlocked={unlocked}
+              isNext={item.id === nextUpId}
+              isFirst={index === 0}
+              isLast={index === items.length - 1}
+              onStatusChange={(next) => setStatus(item.id, next)}
+              onDefer={() => defer(item.id)}
+              onDelete={() => remove(item.id)}
+              onMoveUp={() => moveItem(index, -1)}
+              onMoveDown={() => moveItem(index, 1)}
+            />
+          </RoadmapStep>
+        ))}
+      </div>
 
       {addingNew ? (
         <div className="flex flex-col gap-2 rounded-2xl bg-surface p-4">

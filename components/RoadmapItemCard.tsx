@@ -23,6 +23,8 @@ const GROUP_LABEL: Record<RoadmapItem['sectionGroup'], string> = {
 interface RoadmapItemCardProps {
   item: RoadmapItem;
   unlocked: boolean;
+  /** The first step that isn't done or set aside — gets a "Next up" badge and a highlight ring. */
+  isNext?: boolean;
   isFirst: boolean;
   isLast: boolean;
   onStatusChange: (next: RoadmapItemStatus) => void;
@@ -40,6 +42,7 @@ interface RoadmapItemCardProps {
 export function RoadmapItemCard({
   item,
   unlocked,
+  isNext = false,
   isFirst,
   isLast,
   onStatusChange,
@@ -52,8 +55,17 @@ export function RoadmapItemCard({
   const isDeferred = item.status === 'deferred';
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl bg-surface p-4">
+    <div
+      className={`flex flex-col gap-2 rounded-2xl bg-surface p-4 ${
+        isNext ? 'ring-2 ring-primary' : ''
+      } ${item.status === 'done' ? 'opacity-60' : ''}`}
+    >
       <div className="flex flex-wrap items-center gap-2">
+        {isNext && (
+          <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-on-primary">
+            Next up
+          </span>
+        )}
         <span className="rounded-full bg-surface-strong px-2 py-0.5 text-xs font-semibold text-text-secondary">
           {GROUP_LABEL[item.sectionGroup]}
         </span>

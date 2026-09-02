@@ -106,14 +106,14 @@
   - [x] 8.9 Fix Progress tab's Layer 1 bar (was blank due to 8.4's bug) and give it a real visual pass
   - [x] 8.10 Onboarding flow: welcome → what-this-does (brief) → enable-notifications, shown once before the app opens to Today (`OnboardingGate` + `OnboardingFlow`, localStorage flag). Plus a branded `SplashScreen` while the DB opens instead of a blank flash.
   - [x] 8.11 Simplify Settings copy (window start/end/hard deadline → "Evening reminder"/"Check-in"/"Last call", `<input type=time>`); rest-day cap is now a bounded +/- stepper, not a free text field.
-  - [ ] 8.12 Full pass: verify build/lint/tests, then a fresh read-through for any remaining rough edges
+  - [x] 8.12 Full pass: build + lint + 33 tests green; read-through done. Round-3 fixes: `QuizPlayer` answer-slots now resync when questions load async (a `useState` initializer left them stuck empty, so the quiz submitted a blank answer set the instant it appeared); section-detail data effect wrapped in `.catch`; roadmap redesigned as a numbered "path" (`RoadmapStep` — spine + step markers + "Next up" highlight); Progress tab reworked (`StatTile` row, `Your path` / `By area` sections); "Open course on Udemy" link no longer `target="_blank"` so iOS can hand off to the Udemy app.
   - [x] 8.13 Light/dark/system theme toggle (`ThemeProvider` + `data-theme` on `<html>` + blocking head script to avoid flash; `[data-theme]` blocks in globals.css); Settings → Appearance.
   - [x] 8.14 App icon recoloured to the palette green (`app/icon.tsx`, `app/apple-icon.tsx`, `app/api/icon/route.tsx`, manifest theme/background colour).
   - [x] 8.15 Playfulness: `utils/feedback.ts` (WebAudio chime/tick/celebrate + haptics, respects a Settings toggle) wired into logging a session, ticking a video, completing a section, quiz results; `pop-in`/`rise-fade` CSS animations (reduced-motion aware).
   - [x] 8.16 Error boundaries (`app/error.tsx`, `app/global-error.tsx`) so a screen-level crash shows a recoverable message, not the raw "application error" page; defensive `sessions ?? []` guards against pre-v2 daily-log rows (suspected cause of the reported crash on a section detail screen).
-  - [ ] 8.17 Round-3 items still open: "open course on Udemy" should hand off to the Udemy app (iOS universal-link behaviour — can't force from a PWA link, needs testing on device); roadmap page could group items by section-group; deeper Progress-tab visual pass.
-  - [ ] 7.1 Connect the repo to a Vercel project; configure environment variables (VAPID private key, Upstash credentials, shared-secret token)
-  - [ ] 7.2 Deploy to production and confirm the build succeeds
+  - [ ] 8.17 Still open after round 3: Udemy hand-off relies on iOS universal-link behaviour (link is now a plain navigation — verify on device); the suspected section-detail crash is mitigated (error boundary + guards) but never reproduced — watch for it recurring on the live build.
+  - [x] 7.1 Vercel project connected; environment variables configured (done by Joy)
+  - [x] 7.2 Deployed to production — build succeeds on Vercel (Joy is testing against the live URL)
   - [ ] 7.3 Install to the iPhone home screen from the live URL and verify standalone display mode
   - [ ] 7.4 Verify offline functionality (airplane mode) against the live deployment
   - [ ] 7.5 Verify push notifications end-to-end against the live deployment (not just localhost)

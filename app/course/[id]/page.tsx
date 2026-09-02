@@ -24,8 +24,12 @@ export default function SectionDetailPage({ params }: { params: Promise<{ id: st
   const [lastAttempt, setLastAttempt] = useState<QuizAttempt | null>(null);
 
   useEffect(() => {
-    getTotalMinutesForItem(id).then(setMinutesLogged);
-    getAttemptsForSection(id).then((attempts) => setLastAttempt(attempts[0] ?? null));
+    getTotalMinutesForItem(id)
+      .then(setMinutesLogged)
+      .catch(() => setMinutesLogged(0));
+    getAttemptsForSection(id)
+      .then((attempts) => setLastAttempt(attempts[0] ?? null))
+      .catch(() => setLastAttempt(null));
   }, [id, lessons]);
 
   if (!section) {

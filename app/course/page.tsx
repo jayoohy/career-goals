@@ -24,7 +24,6 @@ export default function CoursePage() {
           <p className="text-sm">{meta.description}</p>
           <a
             href={meta.url}
-            target="_blank"
             rel="noreferrer"
             className="mt-1 text-sm font-semibold text-primary underline"
           >
