@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react';
 
+import { SplashScreen } from '@/components/SplashScreen';
 import { runDayCloseCheck } from '@/services/dayCloseService';
 import { initDatabase } from '@/services/db';
+import { loadFeedbackPreference } from '@/utils/feedback';
 
 /**
  * Client-side app bootstrap — web equivalent of the Expo app's RootLayout effect: open/seed the
@@ -14,6 +16,8 @@ export function AppInit({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    loadFeedbackPreference();
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch((error: unknown) => {
         console.error('Service worker registration failed', error);
@@ -29,7 +33,7 @@ export function AppInit({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (!ready) {
-    return null;
+    return <SplashScreen />;
   }
 
   return <>{children}</>;

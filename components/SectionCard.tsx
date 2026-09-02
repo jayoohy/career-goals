@@ -42,11 +42,15 @@ export function SectionCard({ section, onPress, lessonProgress, flagged }: Secti
         )}
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-surface-strong">
-        <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${percent}%` }} />
+        <div
+          className="h-full rounded-full bg-primary transition-[width]"
+          style={{ width: `${percent}%` }}
+        />
       </div>
       <div className="flex items-center justify-between gap-2 text-sm text-text-secondary">
         <span>
-          {lessonProgress.done}/{lessonProgress.total} videos · {formatDuration(section.durationMinutes)}
+          {lessonProgress.done}/{lessonProgress.total} videos ·{' '}
+          {formatDuration(section.durationMinutes)}
         </span>
         <span>{STATUS_LABEL[section.status]}</span>
       </div>

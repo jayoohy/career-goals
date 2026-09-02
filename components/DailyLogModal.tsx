@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { BookIcon, ChevronLeftIcon, CloseIcon, MoonIcon } from '@/components/icons';
 import { RestDayIndicator } from '@/components/RestDayIndicator';
 import type { CourseSection, LinkedItemKind, RestDayBudget, RoadmapItem } from '@/types/models';
+import { chime, tick } from '@/utils/feedback';
 
 interface SelectableItem {
   id: string;
@@ -30,6 +31,16 @@ interface DailyLogModalProps {
 type Step = 'choose' | 'pick-item' | 'duration' | 'rest-confirm';
 
 const DURATION_CHOICES = [10, 20, 30, 45, 60];
+/** A single session can't be longer than one very long study day — stops fat-finger entries like "600" meaning 6:00. */
+const MAX_SESSION_MINUTES = 600;
+
+function parseCustomMinutes(raw: string): number | null {
+  const n = Math.round(Number(raw));
+  if (!Number.isFinite(n) || n <= 0 || n > MAX_SESSION_MINUTES) {
+    return null;
+  }
+  return n;
+}
 
 /**
  * A short, one-decision-per-screen flow instead of one crowded form (the earlier version showed
@@ -56,8 +67,12 @@ export function DailyLogModal({
     return null;
   }
 
-  const activeSections = courseSections.filter((s) => s.status !== 'done' && s.status !== 'skipped');
-  const activeRoadmapItems = roadmapItems.filter((r) => r.status !== 'done' && r.status !== 'deferred');
+  const activeSections = courseSections.filter(
+    (s) => s.status !== 'done' && s.status !== 'skipped',
+  );
+  const activeRoadmapItems = roadmapItems.filter(
+    (r) => r.status !== 'done' && r.status !== 'deferred',
+  );
   const restDaysRemaining = restBudget ? restBudget.cap - restBudget.usedCount : 0;
 
   function reset() {
@@ -82,6 +97,7 @@ export function DailyLogModal({
         linkedItemKind: selected.kind,
         durationMinutes: minutes,
       });
+      chime();
       handleClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not log that session.');
@@ -95,6 +111,7 @@ export function DailyLogModal({
     setError(null);
     try {
       await onMarkRest();
+      tick();
       handleClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not mark today as rest.');
@@ -115,8 +132,8 @@ export function DailyLogModal({
           : 'Rest day';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
-      <div className="flex max-h-[85%] w-full max-w-(--max-content-width) flex-col gap-4 overflow-y-auto rounded-t-3xl bg-background p-6 sm:rounded-3xl">
+    <div className="fixed inset-0 z-100 flex items-end justify-center bg-black/40 sm:items-center">
+      <div className="flex max-h-[88dvh] w-full max-w-(--max-content-width) flex-col gap-4 overflow-y-auto rounded-t-3xl bg-background p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:rounded-3xl sm:pb-6">
         <div className="flex items-center gap-3">
           {step !== 'choose' && (
             <button
@@ -229,14 +246,23 @@ export function DailyLogModal({
             <div className="flex items-center gap-2">
               <input
                 value={customMinutes}
-                onChange={(e) => setCustomMinutes(e.target.value)}
-                placeholder="Custom minutes"
+                onChange={(e) =>
+                  setCustomMinutes(e.target.value.replace(/[^0-9]/g, '').slice(0, 3))
+                }
+                placeholder="Other (minutes)"
                 inputMode="numeric"
                 className="min-h-11 flex-1 rounded-xl border border-border bg-transparent px-3 text-text"
               />
               <button
-                disabled={submitting || !customMinutes}
-                onClick={() => submitDuration(parseInt(customMinutes, 10))}
+                disabled={submitting || parseCustomMinutes(customMinutes) === null}
+                onClick={() => {
+                  const minutes = parseCustomMinutes(customMinutes);
+                  if (minutes === null) {
+                    setError(`Enter a number of minutes between 1 and ${MAX_SESSION_MINUTES}.`);
+                    return;
+                  }
+                  submitDuration(minutes);
+                }}
                 className="min-h-11 rounded-xl bg-surface-strong px-4 text-sm font-semibold disabled:opacity-50"
               >
                 Log it
@@ -254,7 +280,9 @@ export function DailyLogModal({
               disabled={submitting || restDaysRemaining <= 0}
               onClick={handleConfirmRest}
               className={`min-h-11 rounded-2xl p-4 text-center font-heading font-semibold disabled:opacity-50 ${
-                restDaysRemaining <= 0 ? 'bg-surface text-text-secondary' : 'bg-primary text-on-primary'
+                restDaysRemaining <= 0
+                  ? 'bg-surface text-text-secondary'
+                  : 'bg-primary text-on-primary'
               }`}
             >
               {restDaysRemaining <= 0 ? 'No rest days left this month' : 'Confirm rest day'}

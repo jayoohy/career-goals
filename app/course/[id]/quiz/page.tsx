@@ -25,7 +25,10 @@ export default function SectionQuizPage({ params }: { params: Promise<{ id: stri
 
   return (
     <main className="mx-auto flex max-w-(--max-content-width) flex-col gap-4 px-6 pb-10">
-      <button onClick={() => router.push(`/course/${id}`)} className="self-start text-sm text-text-secondary">
+      <button
+        onClick={() => router.push(`/course/${id}`)}
+        className="self-start text-sm text-text-secondary"
+      >
         ← Back to section
       </button>
       <h1 className="font-heading text-3xl font-bold">{section?.title ?? 'Quiz'}</h1>

@@ -29,6 +29,23 @@ export async function deferRoadmapItem(id: string): Promise<void> {
 }
 
 /**
+ * Removes a roadmap item and closes the gap in `sequencePosition` so ordering stays contiguous.
+ * Any item can be removed (the list is Joy's plan, not a fixed spec) — the job-ready calculation
+ * simply has one fewer threshold item to satisfy afterwards, which is the intended behaviour.
+ */
+export async function deleteRoadmapItem(id: string): Promise<void> {
+  await db.transaction('rw', db.roadmapItems, async () => {
+    await db.roadmapItems.delete(id);
+    const remaining = await db.roadmapItems.orderBy('sequencePosition').toArray();
+    for (let i = 0; i < remaining.length; i += 1) {
+      if (remaining[i].sequencePosition !== i + 1) {
+        await db.roadmapItems.update(remaining[i].id, { sequencePosition: i + 1 });
+      }
+    }
+  });
+}
+
+/**
  * Persists a full reorder. Callers (UI) must only invoke this once `isRoadmapUnlocked()` is
  * true — per §4.2, `sequence_position` is read-only in the UI until Layer 1 is complete.
  */

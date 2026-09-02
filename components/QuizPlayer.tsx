@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { QuizAttempt, QuizQuestion } from '@/types/models';
+import { celebrate, tick } from '@/utils/feedback';
 
 interface QuizPlayerProps {
   questions: QuizQuestion[];
@@ -11,11 +12,19 @@ interface QuizPlayerProps {
 
 /** Tier 1 static-bank MCQ flow (PRD §7.1) — informational only, never gating. */
 export function QuizPlayer({ questions, onSubmit }: QuizPlayerProps) {
-  const [answers, setAnswers] = useState<(number | null)[]>(() => questions.map(() => null));
+  const [answers, setAnswers] = useState<(number | null)[]>([]);
   const [result, setResult] = useState<QuizAttempt | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const allAnswered = answers.every((a) => a !== null);
+  // `questions` arrives async from useQuiz — resize the answer slots to match once it loads
+  // (a plain useState initializer would stay stuck at the empty first-render value, which made
+  // the quiz submit an empty answer set the moment it appeared).
+  useEffect(() => {
+    setAnswers(questions.map(() => null));
+    setResult(null);
+  }, [questions]);
+
+  const allAnswered = answers.length === questions.length && answers.every((a) => a !== null);
 
   function selectAnswer(questionIndex: number, optionIndex: number) {
     if (result) return;
@@ -28,6 +37,8 @@ export function QuizPlayer({ questions, onSubmit }: QuizPlayerProps) {
     try {
       const attempt = await onSubmit(answers as number[]);
       setResult(attempt);
+      if (attempt.flaggedForReview) tick();
+      else celebrate();
     } finally {
       setSubmitting(false);
     }
@@ -71,7 +82,7 @@ export function QuizPlayer({ questions, onSubmit }: QuizPlayerProps) {
           Submit quiz
         </button>
       ) : (
-        <div className="flex flex-col gap-1 rounded-2xl bg-surface p-4">
+        <div className="flex flex-col gap-1 rounded-2xl bg-surface p-4 animate-pop-in">
           <p className="font-heading font-semibold">
             {result.correctCount}/{result.totalQuestions} correct
           </p>

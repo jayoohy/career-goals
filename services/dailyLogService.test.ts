@@ -1,7 +1,12 @@
 import { db } from '@/services/db';
 import { todayLocalDate } from '@/utils/dateUtils';
 
-import { addStudySession, createRestLog, meetsStudiedFloor, totalMinutesForLog } from './dailyLogService';
+import {
+  addStudySession,
+  createRestLog,
+  meetsStudiedFloor,
+  totalMinutesForLog,
+} from './dailyLogService';
 
 beforeEach(async () => {
   await db.dailyLogs.clear();
@@ -35,7 +40,12 @@ describe('addStudySession', () => {
 
   it('adds a second session the same day instead of overwriting the first', async () => {
     const date = todayLocalDate();
-    await addStudySession({ date, linkedItemId: 'a', linkedItemKind: 'course_section', durationMinutes: 5 });
+    await addStudySession({
+      date,
+      linkedItemId: 'a',
+      linkedItemKind: 'course_section',
+      durationMinutes: 5,
+    });
     const log = await addStudySession({
       date,
       linkedItemId: 'b',
@@ -51,7 +61,12 @@ describe('addStudySession', () => {
     const date = todayLocalDate();
     await createRestLog(date);
     await expect(
-      addStudySession({ date, linkedItemId: 'a', linkedItemKind: 'course_section', durationMinutes: 20 }),
+      addStudySession({
+        date,
+        linkedItemId: 'a',
+        linkedItemKind: 'course_section',
+        durationMinutes: 20,
+      }),
     ).rejects.toThrow(/rest/i);
   });
 });

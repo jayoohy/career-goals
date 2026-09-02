@@ -4,7 +4,11 @@ import { useEffect } from 'react';
 
 import { JOB_READY_COPY } from '@/constants/copy';
 import { useDailyLog } from '@/hooks/useDailyLog';
-import { hasJobReadyBeenNotified, isJobReady, markJobReadyNotified } from '@/services/milestoneService';
+import {
+  hasJobReadyBeenNotified,
+  isJobReady,
+  markJobReadyNotified,
+} from '@/services/milestoneService';
 
 /**
  * One-time job-ready milestone notification (PRD §4.3, requirement 8) — ported from the

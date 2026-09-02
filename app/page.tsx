@@ -19,7 +19,7 @@ export default function TodayPage() {
   const { items } = useRoadmap();
   const [modalOpen, setModalOpen] = useState(false);
 
-  const sessions = todayLog?.type === 'studied' ? todayLog.sessions : [];
+  const sessions = todayLog?.type === 'studied' ? (todayLog.sessions ?? []) : [];
   const isRestDay = todayLog?.type === 'rest';
   const hasSessionsToday = sessions.length > 0;
 
@@ -40,7 +40,9 @@ export default function TodayPage() {
           <MoonIcon className="h-7 w-7 shrink-0 text-streak" />
           <div>
             <p className="font-heading font-semibold">Today&apos;s a rest day</p>
-            <p className="text-sm text-text-secondary">Doesn&apos;t break your streak. See you tomorrow.</p>
+            <p className="text-sm text-text-secondary">
+              Doesn&apos;t break your streak. See you tomorrow.
+            </p>
           </div>
         </div>
       ) : hasSessionsToday ? (
@@ -51,7 +53,8 @@ export default function TodayPage() {
               <div key={i} className="flex items-center gap-3">
                 <BookIcon className="h-5 w-5 shrink-0 text-primary" />
                 <p className="text-sm">
-                  {labelFor(session.linkedItemId, session.linkedItemKind)} — {session.durationMinutes} min
+                  {labelFor(session.linkedItemId, session.linkedItemKind)} —{' '}
+                  {session.durationMinutes} min
                 </p>
               </div>
             ))}

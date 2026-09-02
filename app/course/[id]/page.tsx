@@ -10,6 +10,7 @@ import { useFlaggedSections } from '@/hooks/useFlaggedSections';
 import { getAttemptsForSection } from '@/services/quizService';
 import { getTotalMinutesForItem } from '@/services/dailyLogService';
 import type { QuizAttempt } from '@/types/models';
+import { celebrate, tick } from '@/utils/feedback';
 
 export default function SectionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -23,8 +24,12 @@ export default function SectionDetailPage({ params }: { params: Promise<{ id: st
   const [lastAttempt, setLastAttempt] = useState<QuizAttempt | null>(null);
 
   useEffect(() => {
-    getTotalMinutesForItem(id).then(setMinutesLogged);
-    getAttemptsForSection(id).then((attempts) => setLastAttempt(attempts[0] ?? null));
+    getTotalMinutesForItem(id)
+      .then(setMinutesLogged)
+      .catch(() => setMinutesLogged(0));
+    getAttemptsForSection(id)
+      .then((attempts) => setLastAttempt(attempts[0] ?? null))
+      .catch(() => setLastAttempt(null));
   }, [id, lessons]);
 
   if (!section) {
@@ -37,8 +42,17 @@ export default function SectionDetailPage({ params }: { params: Promise<{ id: st
 
   const doneCount = lessons.filter((l) => l.done).length;
   const percent = lessons.length > 0 ? Math.round((doneCount / lessons.length) * 100) : 0;
+
+  async function handleToggleLesson(lessonId: string, nextDone: boolean) {
+    await toggle(lessonId, nextDone);
+    if (!nextDone) return;
+    const willBeComplete = lessons.every((l) => l.id === lessonId || l.done);
+    if (willBeComplete) celebrate();
+    else tick();
+  }
   const canShowSkim = section.skimFlag && section.status !== 'done' && section.status !== 'skipped';
-  const timeCoveredButNotDone = section.status !== 'done' && minutesLogged >= section.durationMinutes;
+  const timeCoveredButNotDone =
+    section.status !== 'done' && minutesLogged >= section.durationMinutes;
   const readyForQuiz = section.status === 'done' || timeCoveredButNotDone;
 
   async function handleMarkKnown() {
@@ -63,7 +77,10 @@ export default function SectionDetailPage({ params }: { params: Promise<{ id: st
           <span className="text-text-secondary">{percent}%</span>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-surface-strong">
-          <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${percent}%` }} />
+          <div
+            className="h-full rounded-full bg-primary transition-[width]"
+            style={{ width: `${percent}%` }}
+          />
         </div>
       </div>
 
@@ -94,9 +111,11 @@ export default function SectionDetailPage({ params }: { params: Promise<{ id: st
       )}
 
       {readyForQuiz && (
-        <div className="flex flex-col gap-2 rounded-2xl bg-surface-strong p-4">
+        <div className="flex flex-col gap-2 rounded-2xl bg-surface-strong p-4 animate-pop-in">
           <p className="font-heading font-semibold">
-            {section.status === 'done' ? 'Section complete — ready for a quick check?' : "You've logged enough time for this section"}
+            {section.status === 'done'
+              ? 'Section complete — ready for a quick check?'
+              : "You've logged enough time for this section"}
           </p>
           {lastAttempt && (
             <p className="text-sm text-text-secondary">
@@ -117,7 +136,7 @@ export default function SectionDetailPage({ params }: { params: Promise<{ id: st
         {lessons.map((lesson) => (
           <button
             key={lesson.id}
-            onClick={() => toggle(lesson.id, !lesson.done)}
+            onClick={() => handleToggleLesson(lesson.id, !lesson.done)}
             className="flex items-center gap-3 rounded-xl p-2 text-left active:bg-surface"
           >
             <span
@@ -127,7 +146,9 @@ export default function SectionDetailPage({ params }: { params: Promise<{ id: st
             >
               {lesson.done && <CheckIcon className="h-4 w-4 text-on-primary" />}
             </span>
-            <span className={`text-sm ${lesson.done ? 'text-text-secondary line-through' : 'text-text'}`}>
+            <span
+              className={`text-sm ${lesson.done ? 'text-text-secondary line-through' : 'text-text'}`}
+            >
               {lesson.title}
             </span>
           </button>
@@ -135,7 +156,10 @@ export default function SectionDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {section.status !== 'skipped' && section.status !== 'done' && (
-        <button onClick={() => skip(id)} className="self-start text-sm text-text-secondary underline">
+        <button
+          onClick={() => skip(id)}
+          className="self-start text-sm text-text-secondary underline"
+        >
           Skip this section
         </button>
       )}
