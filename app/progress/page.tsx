@@ -29,7 +29,8 @@ export default function ProgressPage() {
     (acc, p) => ({ done: acc.done + p.done, total: acc.total + p.total }),
     { done: 0, total: 0 },
   );
-  const layer1Percent = lessonTotals.total > 0 ? Math.round((lessonTotals.done / lessonTotals.total) * 100) : 0;
+  const layer1Percent =
+    lessonTotals.total > 0 ? Math.round((lessonTotals.done / lessonTotals.total) * 100) : 0;
 
   return (
     <main className="mx-auto flex max-w-(--max-content-width) flex-col gap-6 px-6 pb-10">

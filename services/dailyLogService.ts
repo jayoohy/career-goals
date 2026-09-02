@@ -1,3 +1,4 @@
+import { syncLessonsToLoggedTime } from '@/services/courseLessonService';
 import { markSectionTouchedByLogging } from '@/services/courseSectionService';
 import { db } from '@/services/db';
 import type { DailyLog, LinkedItemKind, StudySession } from '@/types/models';
@@ -16,7 +17,8 @@ export async function getLogsInRange(startDate: string, endDate: string): Promis
 }
 
 export function totalMinutesForLog(log: DailyLog): number {
-  return log.sessions.reduce((sum, session) => sum + session.durationMinutes, 0);
+  // `?? []` guards against any legacy row that predates the sessions[] migration.
+  return (log.sessions ?? []).reduce((sum, session) => sum + session.durationMinutes, 0);
 }
 
 /** True once a day's logged sessions add up to the studied floor — the signal `useDailyLog` uses to decide whether to record the streak/day-status for today. */
@@ -36,7 +38,7 @@ export async function getTotalMinutesForItem(linkedItemId: string): Promise<numb
   return studiedLogs.reduce(
     (total, log) =>
       total +
-      log.sessions
+      (log.sessions ?? [])
         .filter((session) => session.linkedItemId === linkedItemId)
         .reduce((sum, session) => sum + session.durationMinutes, 0),
     0,
@@ -73,13 +75,17 @@ export async function addStudySession(input: AddStudySessionInput): Promise<Dail
   };
 
   const next: DailyLog = existing
-    ? { ...existing, type: 'studied', sessions: [...existing.sessions, session] }
+    ? { ...existing, type: 'studied', sessions: [...(existing.sessions ?? []), session] }
     : { date: input.date, type: 'studied', sessions: [session], notes: null };
 
   await db.dailyLogs.put(next);
 
   if (input.linkedItemKind === 'course_section') {
     await markSectionTouchedByLogging(input.linkedItemId);
+    await syncLessonsToLoggedTime(
+      input.linkedItemId,
+      await getTotalMinutesForItem(input.linkedItemId),
+    );
   }
 
   return next;

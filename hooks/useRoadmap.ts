@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   addRoadmapItem,
   deferRoadmapItem,
+  deleteRoadmapItem,
   getAllRoadmapItems,
   getSectionGroupProgress,
   isRoadmapUnlocked,
@@ -57,6 +58,14 @@ export function useRoadmap() {
     [refresh],
   );
 
+  const remove = useCallback(
+    async (id: string) => {
+      await deleteRoadmapItem(id);
+      await refresh();
+    },
+    [refresh],
+  );
+
   /** Callers must only invoke this when `unlocked` is true — see PRD §4.2. */
   const reorder = useCallback(
     async (orderedIds: string[]) => {
@@ -74,5 +83,16 @@ export function useRoadmap() {
     [refresh],
   );
 
-  return { items, unlocked, groupProgress, loading, refresh, setStatus, defer, reorder, addItem };
+  return {
+    items,
+    unlocked,
+    groupProgress,
+    loading,
+    refresh,
+    setStatus,
+    defer,
+    remove,
+    reorder,
+    addItem,
+  };
 }

@@ -29,9 +29,9 @@ const LABEL_CLASS: Record<Waypoint['state'], string> = {
 export function PathProgressMap({ courseComplete, jobReady }: PathProgressMapProps) {
   const waypoints: Waypoint[] = [
     { label: 'Frontend developer', state: 'done' },
-    { label: 'Layer 1 — course complete', state: courseComplete ? 'done' : 'current' },
+    { label: 'Finished the course', state: courseComplete ? 'done' : 'current' },
     {
-      label: 'Job-ready floor crossed',
+      label: 'Ready to apply for jobs',
       state: jobReady ? 'done' : courseComplete ? 'current' : 'upcoming',
     },
     { label: 'CV / Robotics engineer', state: jobReady ? 'current' : 'upcoming' },
@@ -47,7 +47,9 @@ export function PathProgressMap({ courseComplete, jobReady }: PathProgressMapPro
               <span className="min-h-6 w-0.5 grow bg-surface-strong" />
             )}
           </div>
-          <span className={`pb-6 pl-2 text-sm ${LABEL_CLASS[waypoint.state]}`}>{waypoint.label}</span>
+          <span className={`pb-6 pl-2 text-sm ${LABEL_CLASS[waypoint.state]}`}>
+            {waypoint.label}
+          </span>
         </div>
       ))}
     </div>

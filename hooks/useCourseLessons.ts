@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { bulkMarkLessonsDone, getLessonsForSection, toggleLesson } from '@/services/courseLessonService';
+import {
+  bulkMarkLessonsDone,
+  getLessonsForSection,
+  toggleLesson,
+} from '@/services/courseLessonService';
 import { recomputeSectionStatus } from '@/services/courseSectionService';
 import type { CourseLesson } from '@/types/models';
 

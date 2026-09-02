@@ -32,13 +32,15 @@ export function NavTabs() {
           <Link
             key={href}
             href={href}
-            className="flex min-w-[44px] flex-1 flex-col items-center gap-1 py-2.5 text-center"
+            className="flex min-w-11 flex-1 flex-col items-center gap-1 py-2.5 text-center"
           >
             <Icon
               active={isActive}
               className={`h-6 w-6 ${isActive ? 'text-primary' : 'text-text-secondary'}`}
             />
-            <span className={`text-xs ${isActive ? 'font-semibold text-primary' : 'text-text-secondary'}`}>
+            <span
+              className={`text-xs ${isActive ? 'font-semibold text-primary' : 'text-text-secondary'}`}
+            >
               {label}
             </span>
           </Link>

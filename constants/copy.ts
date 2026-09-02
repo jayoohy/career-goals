@@ -34,8 +34,8 @@ export const WEEKLY_REVIEW_COPY: NotificationCopy = {
 };
 
 export const JOB_READY_COPY: NotificationCopy = {
-  title: "The floor's covered.",
-  body: 'You could start applying now. Everything left on the roadmap makes you stronger, not more hireable-vs-not.',
+  title: "You're ready to apply.",
+  body: 'You could start sending applications now. Everything left on the roadmap makes you stronger, not more hireable-vs-not.',
 };
 
 export function streakBreakLine(longestStreak: number): string {

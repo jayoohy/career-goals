@@ -95,18 +95,23 @@
   Build/lint/tests re-verified clean after the cleanup (31/31 tests, all 19 routes build).
 - [ ] 7.0 Deploy to Vercel and verify end-to-end (install, offline, push) on Joy's iPhone
 - [ ] 8.0 UX redesign + bug fixes from first real-use feedback
-  - [ ] 8.1 Design tokens: new color palette (green primary / amber streak accent, light+dark), Poppins/Open Sans, spacing/radius scale
-  - [ ] 8.2 Replace floating top pill nav with a proper bottom tab bar (icon+label, safe-area padding, fixes clipping/overflow/text-bleed-through)
-  - [ ] 8.3 Data model: `CourseLesson` (per-video checklist), `CourseMeta` (link/tutor/description), multi-session `DailyLog` — Dexie schema v2 + migration
-  - [ ] 8.4 Fix: logging time against a section auto-sets it to in_progress; drives per-lesson/derived section status instead of manual cycling
-  - [ ] 8.5 Redesign Course tab: course header (link/tutor/description) + section list with real progress (not blank), lesson checklist screen per section
-  - [ ] 8.6 Redesign daily-log flow: additive sessions, clearer step-by-step UI instead of one crowded modal
-  - [ ] 8.7 Quiz flow: confirm-and-complete (separate page, not inline), plus a time-covered nudge when logged minutes reach a section's length without manual completion
-  - [ ] 8.8 Redesign Roadmap tab for clarity + a visible link back to "Layer 1 — the course" at the top
-  - [ ] 8.9 Fix Progress tab's Layer 1 bar (was blank due to 8.4's bug) and give it a real visual pass
-  - [ ] 8.10 Onboarding flow: welcome → what-this-does (brief) → enable-notifications, shown once before the app opens to Today
-  - [ ] 8.11 Simplify Settings copy (window start/end/hard deadline → plain language)
+  - [x] 8.1 Design tokens: new color palette (green primary / amber streak accent, light+dark), Poppins/Open Sans, spacing/radius scale
+  - [x] 8.2 Replace floating top pill nav with a proper bottom tab bar (icon+label, safe-area padding, fixes clipping/overflow/text-bleed-through)
+  - [x] 8.3 Data model: `CourseLesson` (per-video checklist), `CourseMeta` (link/tutor/description), multi-session `DailyLog` — Dexie schema v2 + migration
+  - [x] 8.4 Fix: logging time against a section auto-sets it to in_progress; drives per-lesson/derived section status instead of manual cycling. Round 3: logging time now also auto-ticks the matching number of videos (`syncLessonsToLoggedTime`, avg-video-length based, only ever checks boxes).
+  - [x] 8.5 Redesign Course tab: course header (link/tutor/description) + section list with real progress (not blank), lesson checklist screen per section
+  - [x] 8.6 Redesign daily-log flow: additive sessions, clearer step-by-step UI instead of one crowded modal. Round 3: modal raised above the bottom nav + safe-area bottom padding (controls no longer hidden behind the tab bar); custom-minutes field constrained to 1–600, digits only.
+  - [x] 8.7 Quiz flow: confirm-and-complete (separate page, not inline), plus a time-covered nudge when logged minutes reach a section's length without manual completion
+  - [x] 8.8 Redesign Roadmap tab for clarity + a visible link back to "the course" at the top. Round 3: explicit 3-way status control (no more accidental tap-cycle to "done"); per-item delete with inline confirm (`deleteRoadmapItem`, resequences); "floor" jargon → "Needed to apply", "Set aside" for defer.
+  - [x] 8.9 Fix Progress tab's Layer 1 bar (was blank due to 8.4's bug) and give it a real visual pass
+  - [x] 8.10 Onboarding flow: welcome → what-this-does (brief) → enable-notifications, shown once before the app opens to Today (`OnboardingGate` + `OnboardingFlow`, localStorage flag). Plus a branded `SplashScreen` while the DB opens instead of a blank flash.
+  - [x] 8.11 Simplify Settings copy (window start/end/hard deadline → "Evening reminder"/"Check-in"/"Last call", `<input type=time>`); rest-day cap is now a bounded +/- stepper, not a free text field.
   - [ ] 8.12 Full pass: verify build/lint/tests, then a fresh read-through for any remaining rough edges
+  - [x] 8.13 Light/dark/system theme toggle (`ThemeProvider` + `data-theme` on `<html>` + blocking head script to avoid flash; `[data-theme]` blocks in globals.css); Settings → Appearance.
+  - [x] 8.14 App icon recoloured to the palette green (`app/icon.tsx`, `app/apple-icon.tsx`, `app/api/icon/route.tsx`, manifest theme/background colour).
+  - [x] 8.15 Playfulness: `utils/feedback.ts` (WebAudio chime/tick/celebrate + haptics, respects a Settings toggle) wired into logging a session, ticking a video, completing a section, quiz results; `pop-in`/`rise-fade` CSS animations (reduced-motion aware).
+  - [x] 8.16 Error boundaries (`app/error.tsx`, `app/global-error.tsx`) so a screen-level crash shows a recoverable message, not the raw "application error" page; defensive `sessions ?? []` guards against pre-v2 daily-log rows (suspected cause of the reported crash on a section detail screen).
+  - [ ] 8.17 Round-3 items still open: "open course on Udemy" should hand off to the Udemy app (iOS universal-link behaviour — can't force from a PWA link, needs testing on device); roadmap page could group items by section-group; deeper Progress-tab visual pass.
   - [ ] 7.1 Connect the repo to a Vercel project; configure environment variables (VAPID private key, Upstash credentials, shared-secret token)
   - [ ] 7.2 Deploy to production and confirm the build succeeds
   - [ ] 7.3 Install to the iPhone home screen from the live URL and verify standalone display mode

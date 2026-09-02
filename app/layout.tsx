@@ -3,6 +3,8 @@ import type { Metadata, Viewport } from 'next';
 import { AppInit } from '@/components/AppInit';
 import { JobReadyNotifier } from '@/components/JobReadyNotifier';
 import { NavTabs } from '@/components/NavTabs';
+import { OnboardingGate } from '@/components/OnboardingGate';
+import { ThemeProvider, THEME_BLOCKING_SCRIPT } from '@/components/ThemeProvider';
 
 import './globals.css';
 
@@ -21,7 +23,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: light)', color: '#059669' },
     { media: '(prefers-color-scheme: dark)', color: '#121212' },
   ],
   viewportFit: 'cover', // required for env(safe-area-inset-*) to resolve on iOS
@@ -30,17 +32,24 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BLOCKING_SCRIPT }} />
+      </head>
       <body>
-        <AppInit>
-          <JobReadyNotifier />
-          <div
-            className="pt-6"
-            style={{ paddingBottom: 'calc(var(--nav-height) + env(safe-area-inset-bottom))' }}
-          >
-            {children}
-          </div>
-          <NavTabs />
-        </AppInit>
+        <ThemeProvider>
+          <AppInit>
+            <JobReadyNotifier />
+            <OnboardingGate>
+              <div
+                className="pt-6"
+                style={{ paddingBottom: 'calc(var(--nav-height) + env(safe-area-inset-bottom))' }}
+              >
+                {children}
+              </div>
+              <NavTabs />
+            </OnboardingGate>
+          </AppInit>
+        </ThemeProvider>
       </body>
     </html>
   );

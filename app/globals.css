@@ -5,7 +5,14 @@
  * Design tokens — Duolingo-adjacent: bold flat color, generous rounding, one confident accent.
  * Green is the brand/action color (buttons, active states, success); amber is reserved for
  * streaks/flames specifically, mirroring the green-CTA / orange-streak split most habit apps
- * use. Dark mode is a separate hand-tuned palette (not an inversion) per standard guidance.
+ * use.
+ *
+ * Theme resolution has three states, matching the Settings toggle (System / Light / Dark):
+ *   - `:root` alone           → light palette (the default)
+ *   - OS dark + not forced light → dark palette   (`@media` block below)
+ *   - `[data-theme="dark"]`    → dark palette   (explicit override, wins over OS)
+ *   - `[data-theme="light"]`   → light palette  (explicit override, wins over OS)
+ * `data-theme` is set on <html> by ThemeProvider from the saved preference.
  */
 :root {
   --color-primary: #059669;
@@ -26,8 +33,10 @@
   --font-body: 'Open Sans', system-ui, sans-serif;
 }
 
+/* Dark palette — a separate hand-tuned set, not an inversion. The same values are applied by
+ * the OS-preference media query and by the explicit `[data-theme="dark"]` override below. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --color-primary: #10b981;
     --color-primary-hover: #34d399;
     --color-on-primary: #052e22;
@@ -42,6 +51,22 @@
     --color-border: #333333;
     --color-destructive: #f87171;
   }
+}
+
+:root[data-theme='dark'] {
+  --color-primary: #10b981;
+  --color-primary-hover: #34d399;
+  --color-on-primary: #052e22;
+  --color-streak: #f59e0b;
+  --color-on-streak: #2b1a00;
+
+  --color-background: #121212;
+  --color-surface: #1e1e1e;
+  --color-surface-strong: #2a2a2a;
+  --color-text: #f5f5f4;
+  --color-text-secondary: #a8a29e;
+  --color-border: #333333;
+  --color-destructive: #f87171;
 }
 
 @theme inline {
@@ -75,4 +100,45 @@ h2,
 h3,
 .font-heading {
   font-family: var(--font-heading);
+}
+
+/* Playful, cheap motion — respects reduced-motion. */
+@keyframes pop-in {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes rise-fade {
+  0% {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-pop-in {
+  animation: pop-in 0.28s ease-out both;
+}
+
+.animate-rise-fade {
+  animation: rise-fade 0.3s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pop-in,
+  .animate-rise-fade {
+    animation: none;
+  }
 }

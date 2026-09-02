@@ -23,7 +23,10 @@ function ProgressBar({ label, percent, detail }: Bar) {
         <span className="text-sm text-text-secondary">{detail}</span>
       </div>
       <div className="h-2.5 overflow-hidden rounded-full bg-surface-strong">
-        <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${percent}%` }} />
+        <div
+          className="h-full rounded-full bg-primary transition-[width]"
+          style={{ width: `${percent}%` }}
+        />
       </div>
     </div>
   );
@@ -49,7 +52,7 @@ export function SegmentedProgressBars({
 }: SegmentedProgressBarsProps) {
   return (
     <div className="flex flex-col gap-4">
-      <ProgressBar label="Layer 1 — Course" percent={layer1Percent} detail={layer1Detail} />
+      <ProgressBar label="Course" percent={layer1Percent} detail={layer1Detail} />
       {groupProgress
         .filter((group) => group.sectionGroup !== 'course')
         .map((group) => (

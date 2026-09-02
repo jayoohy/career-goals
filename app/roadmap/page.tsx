@@ -10,7 +10,7 @@ import { useRoadmap } from '@/hooks/useRoadmap';
 export default function RoadmapPage() {
   const router = useRouter();
   const { sections } = useCourseSections();
-  const { items, unlocked, setStatus, defer, reorder, addItem } = useRoadmap();
+  const { items, unlocked, setStatus, defer, remove, reorder, addItem } = useRoadmap();
   const [addingNew, setAddingNew] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
@@ -51,9 +51,10 @@ export default function RoadmapPage() {
         className="flex items-center justify-between rounded-2xl bg-surface-strong p-4 text-left"
       >
         <div>
-          <p className="font-heading font-semibold">Layer 1 — The Course</p>
+          <p className="font-heading font-semibold">The course — start here</p>
           <p className="text-sm text-text-secondary">
-            {courseDone}/{sections.length} sections done · this roadmap starts once it&apos;s complete
+            {courseDone}/{sections.length} sections done · the steps below open up once it&apos;s
+            complete
           </p>
         </div>
         <span className="text-text-secondary">→</span>
@@ -74,6 +75,7 @@ export default function RoadmapPage() {
           isLast={index === items.length - 1}
           onStatusChange={(next) => setStatus(item.id, next)}
           onDefer={() => defer(item.id)}
+          onDelete={() => remove(item.id)}
           onMoveUp={() => moveItem(index, -1)}
           onMoveDown={() => moveItem(index, 1)}
         />

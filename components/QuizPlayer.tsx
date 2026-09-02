@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import type { QuizAttempt, QuizQuestion } from '@/types/models';
+import { celebrate, tick } from '@/utils/feedback';
 
 interface QuizPlayerProps {
   questions: QuizQuestion[];
@@ -28,6 +29,8 @@ export function QuizPlayer({ questions, onSubmit }: QuizPlayerProps) {
     try {
       const attempt = await onSubmit(answers as number[]);
       setResult(attempt);
+      if (attempt.flaggedForReview) tick();
+      else celebrate();
     } finally {
       setSubmitting(false);
     }
@@ -71,7 +74,7 @@ export function QuizPlayer({ questions, onSubmit }: QuizPlayerProps) {
           Submit quiz
         </button>
       ) : (
-        <div className="flex flex-col gap-1 rounded-2xl bg-surface p-4">
+        <div className="flex flex-col gap-1 rounded-2xl bg-surface p-4 animate-pop-in">
           <p className="font-heading font-semibold">
             {result.correctCount}/{result.totalQuestions} correct
           </p>
