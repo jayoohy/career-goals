@@ -12,6 +12,58 @@ export async function getAllRoadmapItems(): Promise<RoadmapItem[]> {
   return db.roadmapItems.orderBy('sequencePosition').toArray();
 }
 
+export async function getRoadmapItemById(id: string): Promise<RoadmapItem | null> {
+  return (await db.roadmapItems.get(id)) ?? null;
+}
+
+/**
+ * Recomputes an item's status from its sub-steps — all done → done, any done → in_progress,
+ * none → not_started. Mirrors `recomputeSectionStatus`. Two carve-outs:
+ *  - an item with no sub-steps keeps whatever status it has (the detail page gives it a manual
+ *    done / not-done toggle instead);
+ *  - 'deferred' is only cleared once at least one sub-step is checked (checking something is
+ *    Joy re-engaging with it), otherwise a deferred item stays deferred.
+ */
+export async function recomputeRoadmapItemStatus(itemId: string): Promise<void> {
+  const item = await db.roadmapItems.get(itemId);
+  if (!item) return;
+
+  const steps = await db.roadmapSubSteps.where('itemId').equals(itemId).toArray();
+  if (steps.length === 0) return;
+
+  const doneCount = steps.filter((step) => step.done).length;
+  const status: RoadmapItemStatus =
+    doneCount === steps.length
+      ? 'done'
+      : doneCount > 0
+        ? 'in_progress'
+        : item.status === 'deferred'
+          ? 'deferred'
+          : 'not_started';
+
+  if (status !== item.status) {
+    await db.roadmapItems.update(itemId, { status });
+  }
+}
+
+export interface RoadmapItemProgress {
+  done: number;
+  total: number;
+}
+
+/** done/total sub-step counts per item — for the progress bar on each roadmap list card. */
+export async function getSubStepProgressByItem(): Promise<Record<string, RoadmapItemProgress>> {
+  const steps = await db.roadmapSubSteps.toArray();
+  const byItem: Record<string, RoadmapItemProgress> = {};
+  for (const step of steps) {
+    const entry = byItem[step.itemId] ?? { done: 0, total: 0 };
+    entry.total += 1;
+    if (step.done) entry.done += 1;
+    byItem[step.itemId] = entry;
+  }
+  return byItem;
+}
+
 /** Derived, not stored (PRD §8) — recomputed from CourseSection state on every read. */
 export async function isRoadmapUnlocked(): Promise<boolean> {
   return isLayer1Complete();

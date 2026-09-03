@@ -1,13 +1,5 @@
+import { ROADMAP_GROUP_LABEL } from '@/constants/roadmap';
 import type { SectionGroupProgress } from '@/services/roadmapService';
-
-const GROUP_LABEL: Record<SectionGroupProgress['sectionGroup'], string> = {
-  course: 'Course',
-  core_skills: 'Core skills',
-  robotics_track: 'Robotics track',
-  portfolio: 'Portfolio',
-  deployment: 'Deployment',
-  career: 'Career',
-};
 
 interface Bar {
   label: string;
@@ -58,7 +50,7 @@ export function SegmentedProgressBars({
         .map((group) => (
           <ProgressBar
             key={group.sectionGroup}
-            label={GROUP_LABEL[group.sectionGroup]}
+            label={ROADMAP_GROUP_LABEL[group.sectionGroup]}
             percent={group.percent}
             detail={`${group.done}/${group.total}`}
           />

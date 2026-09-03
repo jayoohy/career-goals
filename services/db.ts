@@ -5,6 +5,7 @@ import { courseMetaSeed } from '@/data/seed/courseMeta';
 import { courseSectionsSeed } from '@/data/seed/courseSections';
 import { quizQuestionsSeed } from '@/data/seed/quizQuestions';
 import { roadmapItemsSeed } from '@/data/seed/roadmapItems';
+import { roadmapSubStepsSeed } from '@/data/seed/roadmapSubSteps';
 import type {
   CourseLesson,
   CourseMeta,
@@ -16,6 +17,7 @@ import type {
   QuizQuestion,
   RestDayBudget,
   RoadmapItem,
+  RoadmapSubStep,
   StreakState,
 } from '@/types/models';
 import { currentMonthKey, todayLocalDate } from '@/utils/dateUtils';
@@ -28,6 +30,7 @@ class CareerGoalsDatabase extends Dexie {
   courseLessons!: Table<CourseLesson, string>;
   courseMeta!: Table<SingletonRow<CourseMeta>, number>;
   roadmapItems!: Table<RoadmapItem, string>;
+  roadmapSubSteps!: Table<RoadmapSubStep, string>;
   dailyLogs!: Table<DailyLog, string>;
   streakState!: Table<SingletonRow<StreakState>, number>;
   restDayBudgets!: Table<RestDayBudget, string>;
@@ -101,6 +104,23 @@ class CareerGoalsDatabase extends Dexie {
             delete legacy.durationMinutes;
           });
       });
+
+    // v3 — adds per-item checklists for roadmap items (roadmapSubSteps), so Layer 2 has the
+    // same tick-off structure course sections have. Seeding/backfill is handled in seedIfEmpty.
+    this.version(3).stores({
+      courseSections: 'id, sortOrder, status',
+      courseLessons: 'id, sectionId, order',
+      courseMeta: 'id',
+      roadmapItems: 'id, sequencePosition, sectionGroup, status',
+      roadmapSubSteps: 'id, itemId, order',
+      dailyLogs: 'date, type',
+      streakState: 'id',
+      restDayBudgets: 'month',
+      quizQuestions: 'id, sectionId',
+      quizAttempts: 'id, sectionId, date',
+      notificationConfig: 'id',
+      milestoneState: 'id',
+    });
   }
 }
 
@@ -117,6 +137,14 @@ async function seedIfEmpty(): Promise<void> {
     if ((await db.courseMeta.count()) === 0) {
       await db.courseMeta.add({ id: 1, ...courseMetaSeed });
     }
+    // v3 backfill — starter checklists for the built-in roadmap items. Only adds steps for
+    // items that still have none, so it never clobbers steps Joy has since edited or removed.
+    if ((await db.roadmapSubSteps.count()) === 0) {
+      const seededItemIds = new Set(roadmapItemsSeed.map((item) => item.id));
+      await db.roadmapSubSteps.bulkAdd(
+        roadmapSubStepsSeed.filter((step) => seededItemIds.has(step.itemId)),
+      );
+    }
     return;
   }
 
@@ -127,6 +155,7 @@ async function seedIfEmpty(): Promise<void> {
       db.courseLessons,
       db.courseMeta,
       db.roadmapItems,
+      db.roadmapSubSteps,
       db.quizQuestions,
       db.streakState,
       db.notificationConfig,
@@ -138,6 +167,7 @@ async function seedIfEmpty(): Promise<void> {
       await db.courseLessons.bulkAdd(courseLessonsSeed);
       await db.courseMeta.add({ id: 1, ...courseMetaSeed });
       await db.roadmapItems.bulkAdd(roadmapItemsSeed);
+      await db.roadmapSubSteps.bulkAdd(roadmapSubStepsSeed);
       await db.quizQuestions.bulkAdd(quizQuestionsSeed);
 
       await db.streakState.add({

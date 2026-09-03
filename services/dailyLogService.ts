@@ -1,5 +1,6 @@
 import { syncLessonsToLoggedTime } from '@/services/courseLessonService';
 import { markSectionTouchedByLogging } from '@/services/courseSectionService';
+import { syncSubStepsToLoggedTime } from '@/services/roadmapSubStepService';
 import { db } from '@/services/db';
 import type { DailyLog, LinkedItemKind, StudySession } from '@/types/models';
 import { todayLocalDate } from '@/utils/dateUtils';
@@ -83,6 +84,11 @@ export async function addStudySession(input: AddStudySessionInput): Promise<Dail
   if (input.linkedItemKind === 'course_section') {
     await markSectionTouchedByLogging(input.linkedItemId);
     await syncLessonsToLoggedTime(
+      input.linkedItemId,
+      await getTotalMinutesForItem(input.linkedItemId),
+    );
+  } else if (input.linkedItemKind === 'roadmap_item') {
+    await syncSubStepsToLoggedTime(
       input.linkedItemId,
       await getTotalMinutesForItem(input.linkedItemId),
     );

@@ -65,16 +65,17 @@
   All 6 routes (`/`, `/course`, `/course/[id]`, `/roadmap`, `/progress`, `/settings`) build and lint clean; full test suite still 31/31.
 
   **Follow-up fix (caught during the task 7 requirements walkthrough):** the original app's `useNotificationScheduler` fired the one-time job-ready milestone notification (requirement 8) client-side, since `isJobReady()` depends on roadmap data that only exists in the client's IndexedDB. That trigger wasn't ported when `useNotificationScheduler` was correctly retired (task 6) as superseded by the server push architecture — added back as `components/JobReadyNotifier.tsx`, mounted at the app root, firing a local notification via the service worker (not a server push) and marking it notified. The persistent `JobReadyBadge` was already correct and unaffected.
+
 - [x] 4.0 Implement PWA installability: manifest, icons, service worker, offline support
   - [x] 4.1 Placeholder icon wired via `app/icon.tsx` / `app/apple-icon.tsx` / `app/api/icon/route.tsx` (generated at build time, all required sizes) — clearly marked as a temporary swap-out for when Joy sources a real icon (resolved open question)
   - [x] 4.2 Add the web app manifest — `app/manifest.ts` (Next's file convention; served at `/manifest.webmanifest`, auto-linked)
   - [x] 4.3 iOS-specific meta tags — `appleWebApp` block in `app/layout.tsx` metadata + `app/apple-icon.tsx`
   - [x] 4.4 Service worker app-shell offline caching — `public/sw.js` (runtime cache-as-you-go, no build-time precache list — see file's own doc comment for why)
   - [x] 4.5 Service worker `push`/`notificationclick` listeners — `public/sw.js`, kept in its own clearly-labeled section separate from the caching logic
-  - [ ] 4.6 Manually verify "Add to Home Screen" install and offline load (airplane mode) on Joy's iPhone — needs a live deployment (task 7); manifest/icon/SW verified locally via `next build` + `next start` in the meantime
+  - [x] 4.6 Manually verify "Add to Home Screen" install and offline load (airplane mode) on Joy's iPhone — done against the live Vercel deployment (see 7.3 / 7.4)
 - [ ] 5.0 Implement zero-cost push notification backend: VAPID, Upstash storage, subscribe/log-sync API routes, Vercel Cron schedules
   - [x] 5.1 Generated the VAPID key pair (`npx web-push generate-vapid-keys`) — stored in `.env.local` (gitignored); `.env.example` documents every var needed
-  - [ ] 5.2 Set up an Upstash Redis instance (free tier) via the Vercel Marketplace integration — **needs Joy's Vercel/Upstash account, see task 7**; code is written against `UPSTASH_REDIS_REST_URL`/`_TOKEN` and degrades to a logged (non-fatal) error until they're set
+  - [x] 5.2 Set up an Upstash Redis instance (free tier) via the Vercel Marketplace integration — done by Joy alongside the Vercel deploy (7.1); `UPSTASH_REDIS_REST_URL`/`_TOKEN` configured
   - [x] 5.3 Client-side subscribe flow — `services/pushSubscriptionService.ts` + `hooks/usePushSubscription.ts`, surfaced as an "Enable notifications" control on the Settings page, gated on `isRunningAsInstalledApp()`
   - [x] 5.4 `/api/subscribe` — validates the shared secret, upserts the subscription in Redis
   - [x] 5.5 Client-side log-sync — `services/logSyncService.ts`, called from `useDailyLog`'s `markStudied`/`markRest`
@@ -86,6 +87,7 @@
   - [ ] 5.11 Manually verify end-to-end on a locked iPhone — **blocked on 5.2 and task 7's live deployment**
 
   Build/lint/tests all still clean with the full backend in place (`next build` succeeds; Upstash logs a non-fatal warning locally until real credentials exist, exactly as expected pre-task-7).
+
 - [x] 6.0 Retire the old Expo/React Native codebase and finalize rename (career-goals)
   - [x] 6.1 Removed `app.json`, `eas.json`, and `scripts/reset-project.js` (`expo-*` packages were already gone from `package.json` since the task-1 scaffold replaced it wholesale)
   - [x] 6.2 Removed `legacy-expo-src/` entirely (it held the renamed `src/`, kept only as porting reference through tasks 2–5) and the unused `assets/` (Expo template icons/logos, superseded by the generated placeholder icons)
@@ -93,7 +95,15 @@
   - [x] 6.4 Verified via repo-wide grep: no real Expo/React Native imports remain anywhere in the codebase (only doc-comments referencing what was replaced, e.g. `NavTabs.tsx`'s "web equivalent of..." note); cleaned the now-irrelevant Expo/Metro/native sections out of `.gitignore`
 
   Build/lint/tests re-verified clean after the cleanup (31/31 tests, all 19 routes build).
+
 - [ ] 7.0 Deploy to Vercel and verify end-to-end (install, offline, push) on Joy's iPhone
+  - [x] 7.1 Connect the repo to a Vercel project; configure environment variables (VAPID private key, Upstash credentials, shared-secret token) — done by Joy
+  - [x] 7.2 Deploy to production and confirm the build succeeds — live on Vercel, Joy is testing against the URL
+  - [x] 7.3 Install to the iPhone home screen from the live URL and verify standalone display mode
+  - [x] 7.4 Verify offline functionality (airplane mode) against the live deployment
+  - [ ] 7.5 Verify push notifications end-to-end against the live deployment (not just localhost)
+  - [ ] 7.6 Walk through every functional requirement in PRD §4 as a final acceptance pass
+
 - [ ] 8.0 UX redesign + bug fixes from first real-use feedback
   - [x] 8.1 Design tokens: new color palette (green primary / amber streak accent, light+dark), Poppins/Open Sans, spacing/radius scale
   - [x] 8.2 Replace floating top pill nav with a proper bottom tab bar (icon+label, safe-area padding, fixes clipping/overflow/text-bleed-through)
@@ -112,9 +122,11 @@
   - [x] 8.15 Playfulness: `utils/feedback.ts` (WebAudio chime/tick/celebrate + haptics, respects a Settings toggle) wired into logging a session, ticking a video, completing a section, quiz results; `pop-in`/`rise-fade` CSS animations (reduced-motion aware).
   - [x] 8.16 Error boundaries (`app/error.tsx`, `app/global-error.tsx`) so a screen-level crash shows a recoverable message, not the raw "application error" page; defensive `sessions ?? []` guards against pre-v2 daily-log rows (suspected cause of the reported crash on a section detail screen).
   - [ ] 8.17 Still open after round 3: Udemy hand-off relies on iOS universal-link behaviour (link is now a plain navigation — verify on device); the suspected section-detail crash is mitigated (error boundary + guards) but never reproduced — watch for it recurring on the live build.
-  - [x] 7.1 Vercel project connected; environment variables configured (done by Joy)
-  - [x] 7.2 Deployed to production — build succeeds on Vercel (Joy is testing against the live URL)
-  - [ ] 7.3 Install to the iPhone home screen from the live URL and verify standalone display mode
-  - [ ] 7.4 Verify offline functionality (airplane mode) against the live deployment
-  - [ ] 7.5 Verify push notifications end-to-end against the live deployment (not just localhost)
-  - [ ] 7.6 Walk through every functional requirement in PRD §4 as a final acceptance pass
+
+- [ ] 9.0 Roadmap sub-steps — give Layer 2 the same structure as the course (feedback round 4: "once I'm done with the course everything becomes unstructured")
+  - [x] 9.1 Data model: `RoadmapSubStep` (`{id, itemId, title, order, done, seeded}`) — Dexie schema v3 + backfill; `data/seed/roadmapSubSteps.ts` ships a curated 4–8 step starter checklist for each of the 14 built-in items
+  - [x] 9.2 `roadmapSubStepService` — get / toggle / add / rename / delete (resequences) / `syncSubStepsToLoggedTime` (Layer-2 twin of `syncLessonsToLoggedTime`, estimatedHours ÷ step count)
+  - [x] 9.3 Item status is now derived from its checklist (`recomputeRoadmapItemStatus`, mirrors `recomputeSectionStatus`); items with no steps fall back to a manual done/not-done toggle. Removed the inline 3-way status control from the list card.
+  - [x] 9.4 Roadmap item detail page (`/roadmap/[id]`) — header, progress bar, editable checklist (`RoadmapChecklist`: check / tap-to-rename / delete / add), set-aside / bring-back. List card (`RoadmapItemCard`) is now a tappable card with a real progress bar, matching `SectionCard`.
+  - [x] 9.5 Logging time against a roadmap item auto-ticks its checklist steps (wired in `addStudySession`); `useRoadmap` exposes `progressByItem`; shared `ROADMAP_GROUP_LABEL` constant (was duplicated 3×)
+  - [ ] 9.6 Verify on the live build; consider making the Progress "By area" bars sub-step-weighted rather than whole-item-count

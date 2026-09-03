@@ -45,6 +45,21 @@ export type RoadmapItemStatus = 'not_started' | 'in_progress' | 'done' | 'deferr
 export type RoadmapSectionGroup =
   'course' | 'core_skills' | 'robotics_track' | 'portfolio' | 'deployment' | 'career';
 
+/**
+ * One checklist step inside a RoadmapItem — the roadmap equivalent of a CourseLesson inside a
+ * CourseSection. Built-in items ship with a starter set (see data/seed/roadmapSubSteps.ts);
+ * Joy can add, rename, check, or remove any of them, and items she adds herself start with none.
+ */
+export interface RoadmapSubStep {
+  id: string;
+  itemId: string;
+  title: string;
+  order: number;
+  done: boolean;
+  /** True for the seeded starter steps — purely informational (lets the UI hint "you can edit these"). */
+  seeded: boolean;
+}
+
 export interface RoadmapItem {
   id: string;
   title: string;
@@ -53,6 +68,12 @@ export interface RoadmapItem {
   description: string;
   estimatedHours: number;
   sequencePosition: number;
+  /**
+   * Derived from the item's sub-steps once it has any (all done → done, some → in_progress),
+   * mirroring CourseSection. 'deferred' is the exception — an explicit "set aside" action,
+   * cleared automatically when a sub-step is checked. Items with no sub-steps fall back to a
+   * manual done / not-done toggle on the detail page.
+   */
   status: RoadmapItemStatus;
   /** True for items (e.g. deployment/edge optimization) that thread through multiple projects rather than completing once — tracked separately, not gating the sequence (PRD §4). */
   isOngoing: boolean;

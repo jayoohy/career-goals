@@ -8,10 +8,12 @@ import {
   deleteRoadmapItem,
   getAllRoadmapItems,
   getSectionGroupProgress,
+  getSubStepProgressByItem,
   isRoadmapUnlocked,
   reorderRoadmapItems,
   updateRoadmapItemStatus,
   type NewRoadmapItemInput,
+  type RoadmapItemProgress,
   type SectionGroupProgress,
 } from '@/services/roadmapService';
 import type { RoadmapItem, RoadmapItemStatus } from '@/types/models';
@@ -20,19 +22,22 @@ export function useRoadmap() {
   const [items, setItems] = useState<RoadmapItem[]>([]);
   const [unlocked, setUnlocked] = useState(false);
   const [groupProgress, setGroupProgress] = useState<SectionGroupProgress[]>([]);
+  const [progressByItem, setProgressByItem] = useState<Record<string, RoadmapItemProgress>>({});
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const [nextItems, nextUnlocked, nextProgress] = await Promise.all([
+      const [nextItems, nextUnlocked, nextProgress, nextItemProgress] = await Promise.all([
         getAllRoadmapItems(),
         isRoadmapUnlocked(),
         getSectionGroupProgress(),
+        getSubStepProgressByItem(),
       ]);
       setItems(nextItems);
       setUnlocked(nextUnlocked);
       setGroupProgress(nextProgress);
+      setProgressByItem(nextItemProgress);
     } finally {
       setLoading(false);
     }
@@ -87,6 +92,7 @@ export function useRoadmap() {
     items,
     unlocked,
     groupProgress,
+    progressByItem,
     loading,
     refresh,
     setStatus,
