@@ -1,5 +1,12 @@
-import Dexie, { type Table } from 'dexie';
+import Dexie, {
+  type DBCore,
+  type DBCoreMutateRequest,
+  type DBCoreMutateResponse,
+  type DBCoreTable,
+  type Table,
+} from 'dexie';
 
+import { notifyMutation } from '@/services/syncBus';
 import { courseLessonsSeed } from '@/data/seed/courseLessons';
 import { courseMetaSeed } from '@/data/seed/courseMeta';
 import { courseSectionsSeed } from '@/data/seed/courseSections';
@@ -125,6 +132,34 @@ class CareerGoalsDatabase extends Dexie {
 }
 
 export const db = new CareerGoalsDatabase();
+
+/**
+ * Fire `notifyMutation()` after every write (add/put/delete) on any table, so the sync engine
+ * can schedule a debounced push. syncBus decides whether to act — it stays silent until
+ * `initSync()` registers a handler (so the initial seed never counts) and while a server
+ * snapshot is being applied.
+ */
+db.use({
+  stack: 'dbcore',
+  name: 'mutationTracker',
+  create(downlevelDatabase: DBCore): DBCore {
+    return {
+      ...downlevelDatabase,
+      table(tableName: string): DBCoreTable {
+        const downlevelTable = downlevelDatabase.table(tableName);
+        return {
+          ...downlevelTable,
+          mutate(req: DBCoreMutateRequest): Promise<DBCoreMutateResponse> {
+            return downlevelTable.mutate(req).then((result) => {
+              notifyMutation();
+              return result;
+            });
+          },
+        };
+      },
+    };
+  },
+});
 
 async function seedIfEmpty(): Promise<void> {
   const existingCount = await db.courseSections.count();

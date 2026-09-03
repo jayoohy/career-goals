@@ -1,5 +1,6 @@
 'use client';
 
+import { BackupCard } from '@/components/BackupCard';
 import { BellIcon } from '@/components/icons';
 import { StepperField } from '@/components/StepperField';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -146,6 +147,8 @@ export default function SettingsPage() {
           onChange={(next) => void updateRestDayCap(next)}
         />
       </div>
+
+      <BackupCard />
     </main>
   );
 }

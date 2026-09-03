@@ -130,3 +130,9 @@
   - [x] 9.4 Roadmap item detail page (`/roadmap/[id]`) — header, progress bar, editable checklist (`RoadmapChecklist`: check / tap-to-rename / delete / add), set-aside / bring-back. List card (`RoadmapItemCard`) is now a tappable card with a real progress bar, matching `SectionCard`.
   - [x] 9.5 Logging time against a roadmap item auto-ticks its checklist steps (wired in `addStudySession`); `useRoadmap` exposes `progressByItem`; shared `ROADMAP_GROUP_LABEL` constant (was duplicated 3×)
   - [ ] 9.6 Verify on the live build; consider making the Progress "By area" bars sub-step-weighted rather than whole-item-count
+
+- [ ] 10.0 Data safety + logging discipline (feedback round 5: everything was loggable at once; data vanished between sessions)
+  - [x] 10.1 Logging picker only offers what you can work on now: while the course is unfinished, just the current section (strict, in order); once it's done, the current roadmap step plus the built-in items whose plan says they run alongside others (`PARALLEL_ROADMAP_ITEM_IDS`). One target → straight to "How long?"; several → a short pick list.
+  - [x] 10.2 Server backup/sync (Option A): whole Dexie DB serialized to one Upstash Redis key. `app/api/state` (GET/PUT, shared-secret, 409 on stale), `server/stateStore.ts`, `services/syncService.ts` (+`syncBus.ts` to decouple the Dexie mutation middleware in `db.ts`). Pull-or-push on launch (`AppInit`), debounced push after every write. Last-write-wins by timestamp, with an activity guard so an emptier/older remote can never clobber real local data. Settings → "Backup" card (`BackupCard` + `useSync`) shows last-synced + a manual trigger. No schema change, no new env vars.
+  - [x] 10.3 `navigator.storage.persist()` on launch (`utils/persistentStorage.ts`) to widen the gap between iOS storage evictions.
+  - [ ] 10.4 Verify on the live build: log on device A, confirm it restores on device B / after clearing site data. Watch the "Backup" card timestamp.

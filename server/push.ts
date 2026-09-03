@@ -10,7 +10,9 @@ function ensureVapidConfigured(): void {
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
   if (!subject || !publicKey || !privateKey) {
-    throw new Error('VAPID_SUBJECT / NEXT_PUBLIC_VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY must be set.');
+    throw new Error(
+      'VAPID_SUBJECT / NEXT_PUBLIC_VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY must be set.',
+    );
   }
   webpush.setVapidDetails(subject, publicKey, privateKey);
 }

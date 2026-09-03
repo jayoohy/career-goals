@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server';
 
-/** Shared-secret gate for /api/subscribe and /api/log-sync (PRD requirement 32) — not full auth, proportionate for a single-user app with no accounts. */
+/** Shared-secret gate for /api/subscribe, /api/log-sync and /api/state (PRD requirement 32) — not full auth, proportionate for a single-user app with no accounts. */
 export function isAuthorized(request: NextRequest): boolean {
   const expected = process.env.PUSH_SHARED_SECRET;
   if (!expected) {

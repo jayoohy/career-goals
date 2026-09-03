@@ -169,3 +169,14 @@ export interface DayLogSyncFlag {
   date: string; // YYYY-MM-DD, local day
   logged: boolean;
 }
+
+/**
+ * Whole-database backup (Option A) — a JSON snapshot of the client's entire Dexie database,
+ * stored under one Redis key so a wiped or second device can pull the data back. Single user,
+ * last-write-wins by `updatedAt`. Shape is owned by services/syncService.ts.
+ */
+export interface StateSnapshot {
+  updatedAt: number; // epoch ms of the client change that produced this snapshot
+  deviceId: string; // opaque per-device id, so a device recognises its own push coming back
+  tables: Record<string, unknown[]>; // { [dexieTableName]: rows[] }
+}

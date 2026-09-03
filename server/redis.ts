@@ -1,8 +1,8 @@
 import { Redis } from '@upstash/redis';
 
 /**
- * The entire server-side footprint of this app (PRD "Push notifications" §7): one Redis
- * instance holding exactly two keys (the push subscription, and today's log-status flag). Not
- * a general database — see server/push.ts and server/dayLogFlag.ts for the two things it stores.
+ * The entire server-side footprint of this app: one Redis instance holding a handful of keys —
+ * the push subscription (server/push.ts), today's log-status flag (server/dayLogFlag.ts), and
+ * the whole-database backup snapshot (server/stateStore.ts). Still single-user, no accounts.
  */
 export const redis = Redis.fromEnv();

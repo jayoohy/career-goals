@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { BookIcon, ChevronLeftIcon, CloseIcon, MoonIcon } from '@/components/icons';
 import { RestDayIndicator } from '@/components/RestDayIndicator';
+import { PARALLEL_ROADMAP_ITEM_IDS } from '@/constants/roadmap';
 import type { CourseSection, LinkedItemKind, RestDayBudget, RoadmapItem } from '@/types/models';
 import { chime, tick } from '@/utils/feedback';
 
@@ -43,9 +44,34 @@ function parseCustomMinutes(raw: string): number | null {
 }
 
 /**
- * A short, one-decision-per-screen flow instead of one crowded form (the earlier version showed
- * every option and a bare number field at once). Sessions are additive — this can be opened
- * again the same day to log more time; it never overwrites what's already logged.
+ * Works out what you're allowed to log time against right now:
+ *  - while the course is unfinished, only the current section (it's done in order — no logging
+ *    section 2 while section 1 is open);
+ *  - once every section is done/skipped, the current roadmap step, plus any roadmap items whose
+ *    plan says they run alongside other work (see PARALLEL_ROADMAP_ITEM_IDS).
+ */
+function getLoggableItems(
+  courseSections: CourseSection[],
+  roadmapItems: RoadmapItem[],
+): SelectableItem[] {
+  const currentSection = courseSections.find((s) => s.status !== 'done' && s.status !== 'skipped');
+  if (currentSection) {
+    return [{ id: currentSection.id, kind: 'course_section', label: currentSection.title }];
+  }
+
+  const courseStarted = courseSections.length > 0;
+  if (!courseStarted) return [];
+
+  const openItems = roadmapItems.filter((r) => r.status !== 'done' && r.status !== 'deferred');
+  const allowed = openItems.filter(
+    (r, index) => index === 0 || PARALLEL_ROADMAP_ITEM_IDS.has(r.id),
+  );
+  return allowed.map((r) => ({ id: r.id, kind: 'roadmap_item', label: r.title }));
+}
+
+/**
+ * A short, one-decision-per-screen flow. Sessions are additive — reopen the same day to log
+ * more time; it never overwrites what's already logged.
  */
 export function DailyLogModal({
   open,
@@ -67,12 +93,8 @@ export function DailyLogModal({
     return null;
   }
 
-  const activeSections = courseSections.filter(
-    (s) => s.status !== 'done' && s.status !== 'skipped',
-  );
-  const activeRoadmapItems = roadmapItems.filter(
-    (r) => r.status !== 'done' && r.status !== 'deferred',
-  );
+  const loggableItems = getLoggableItems(courseSections, roadmapItems);
+  const hasChoice = loggableItems.length > 1;
   const restDaysRemaining = restBudget ? restBudget.cap - restBudget.usedCount : 0;
 
   function reset() {
@@ -85,6 +107,16 @@ export function DailyLogModal({
   function handleClose() {
     reset();
     onClose();
+  }
+
+  function startStudy() {
+    if (loggableItems.length === 0) return;
+    if (loggableItems.length === 1) {
+      setSelected(loggableItems[0]);
+      setStep('duration');
+    } else {
+      setStep('pick-item');
+    }
   }
 
   async function submitDuration(minutes: number) {
@@ -137,7 +169,7 @@ export function DailyLogModal({
         <div className="flex items-center gap-3">
           {step !== 'choose' && (
             <button
-              onClick={() => setStep(step === 'duration' ? 'pick-item' : 'choose')}
+              onClick={() => setStep(step === 'duration' && hasChoice ? 'pick-item' : 'choose')}
               aria-label="Back"
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface"
             >
@@ -157,13 +189,20 @@ export function DailyLogModal({
         {step === 'choose' && (
           <div className="flex flex-col gap-3">
             <button
-              onClick={() => setStep('pick-item')}
-              className="flex items-center gap-4 rounded-2xl border-2 border-border bg-surface p-4 text-left active:scale-[0.98]"
+              onClick={startStudy}
+              disabled={loggableItems.length === 0}
+              className="flex items-center gap-4 rounded-2xl border-2 border-border bg-surface p-4 text-left active:scale-[0.98] disabled:opacity-50"
             >
-              <BookIcon className="h-8 w-8 text-primary" />
+              <BookIcon className="h-8 w-8 shrink-0 text-primary" />
               <div>
                 <p className="font-heading font-semibold">I studied</p>
-                <p className="text-sm text-text-secondary">Log time against a section or item</p>
+                <p className="text-sm text-text-secondary">
+                  {loggableItems.length === 0
+                    ? 'Nothing left on the plan — nice work'
+                    : loggableItems.length === 1
+                      ? loggableItems[0].label
+                      : 'Pick what you worked on'}
+                </p>
               </div>
             </button>
             {!hasSessionsToday && (
@@ -171,7 +210,7 @@ export function DailyLogModal({
                 onClick={() => setStep('rest-confirm')}
                 className="flex items-center gap-4 rounded-2xl border-2 border-border bg-surface p-4 text-left active:scale-[0.98]"
               >
-                <MoonIcon className="h-8 w-8 text-streak" />
+                <MoonIcon className="h-8 w-8 shrink-0 text-streak" />
                 <div>
                   <p className="font-heading font-semibold">Rest day</p>
                   <p className="text-sm text-text-secondary">Doesn&apos;t break your streak</p>
@@ -182,49 +221,19 @@ export function DailyLogModal({
         )}
 
         {step === 'pick-item' && (
-          <div className="flex flex-col gap-4 overflow-y-auto">
-            {activeSections.length > 0 && (
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                  Course
-                </p>
-                <div className="flex flex-col gap-2">
-                  {activeSections.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => {
-                        setSelected({ id: s.id, kind: 'course_section', label: s.title });
-                        setStep('duration');
-                      }}
-                      className="rounded-xl bg-surface p-3 text-left text-sm"
-                    >
-                      {s.title}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {activeRoadmapItems.length > 0 && (
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                  Roadmap
-                </p>
-                <div className="flex flex-col gap-2">
-                  {activeRoadmapItems.map((r) => (
-                    <button
-                      key={r.id}
-                      onClick={() => {
-                        setSelected({ id: r.id, kind: 'roadmap_item', label: r.title });
-                        setStep('duration');
-                      }}
-                      className="rounded-xl bg-surface p-3 text-left text-sm"
-                    >
-                      {r.title}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+          <div className="flex flex-col gap-2">
+            {loggableItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setSelected(item);
+                  setStep('duration');
+                }}
+                className="rounded-xl bg-surface p-3 text-left text-sm"
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
         )}
 
