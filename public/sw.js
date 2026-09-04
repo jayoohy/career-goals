@@ -1,17 +1,21 @@
 /**
- * Service worker — two independent concerns, kept in their own sections per the PRD's technical
- * considerations (offline caching vs. push handling shouldn't be tangled together):
+ * Service worker — two independent concerns kept in their own sections (offline caching vs.
+ * push handling).
  *
- * 1. Offline app-shell caching: runtime cache-as-you-go (not a build-time precache list, since
- *    Next's hashed asset filenames change every build and this project deliberately avoids a
- *    heavyweight SW-generation plugin — see PRD §7). Every page/asset visited while online gets
- *    cached, so a repeat visit works offline. A page never opened online first won't be cached —
- *    acceptable for a single-user app that naturally opens every tab at least once.
- * 2. Web Push: 'push' displays the incoming notification, 'notificationclick' focuses/opens the
- *    app — the client side of the zero-cost push architecture in task 5.
+ * 1. Caching. The earlier version cache-first'd *everything* into a single never-versioned
+ *    cache, so after a few deploys the app served a mix of JS chunks from different builds and
+ *    Next.js kept forcing full-page reloads on the mismatch. This version is deliberately
+ *    conservative:
+ *      - /api/*                     → not intercepted at all (always straight to network)
+ *      - page navigations (HTML)    → network-first, cached copy only as an offline fallback
+ *      - /_next/static/* (hashed)   → cache-first (those URLs are immutable)
+ *      - everything else same-origin → network-first, fall back to cache
+ *    CACHE_NAME carries a version; `activate` deletes every other cache, so bumping it wipes a
+ *    poisoned cache on the next SW update.
+ * 2. Web Push: 'push' shows the notification, 'notificationclick' focuses/opens the app.
  */
 
-const CACHE_NAME = 'career-goals-v1';
+const CACHE_NAME = 'career-goals-v2';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -28,50 +32,62 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// --- 1. Offline app-shell caching ---------------------------------------------------------
+// --- 1. Caching --------------------------------------------------------------------------------
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  if (request.method !== 'GET' || !request.url.startsWith(self.location.origin)) {
+  const url = new URL(request.url);
+
+  // Only same-origin GETs are our business. Anything else (POST/PUT, cross-origin, and crucially
+  // every /api/* call — sync, subscribe, log-sync) goes straight to the network untouched.
+  if (request.method !== 'GET' || url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/api/')) return;
+
+  // Content-hashed build assets are safe to keep forever.
+  if (url.pathname.startsWith('/_next/static/')) {
+    event.respondWith(cacheFirst(request));
     return;
   }
 
-  if (request.mode === 'navigate') {
-    event.respondWith(networkFirst(request));
-    return;
-  }
-
-  event.respondWith(cacheFirst(request));
+  // Navigations and everything else: fresh when online, cached copy when not.
+  event.respondWith(networkFirst(request));
 });
 
 async function networkFirst(request) {
   try {
     const response = await fetch(request);
-    const cache = await caches.open(CACHE_NAME);
-    cache.put(request, response.clone());
+    if (response.ok && response.type === 'basic') {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+    }
     return response;
   } catch {
     const cached = await caches.match(request);
-    return cached ?? Response.error();
+    if (cached) return cached;
+    if (request.mode === 'navigate') {
+      const shell = await caches.match('/');
+      if (shell) return shell;
+    }
+    return Response.error();
   }
 }
 
 async function cacheFirst(request) {
   const cached = await caches.match(request);
-  if (cached) {
-    return cached;
-  }
+  if (cached) return cached;
   try {
     const response = await fetch(request);
-    const cache = await caches.open(CACHE_NAME);
-    cache.put(request, response.clone());
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+    }
     return response;
   } catch {
     return Response.error();
   }
 }
 
-// --- 2. Web Push ----------------------------------------------------------------------------
+// --- 2. Web Push ------------------------------------------------------------------------------
 
 self.addEventListener('push', (event) => {
   if (!event.data) {

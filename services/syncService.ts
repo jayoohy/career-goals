@@ -95,7 +95,8 @@ function emit(): void {
 // "win" and wipe real local data. So we also ask: does each side actually have any logged
 // activity? Real local data is never overwritten by an emptier remote.
 
-async function localHasActivity(): Promise<boolean> {
+/** Exported so AppInit can decide whether it's safe to render before the server round-trip finishes. */
+export async function localHasActivity(): Promise<boolean> {
   const [logs, attempts, doneLessons, doneSteps] = await Promise.all([
     db.dailyLogs.count(),
     db.quizAttempts.count(),
@@ -153,9 +154,13 @@ async function applySnapshot(snapshot: StateSnapshot): Promise<void> {
 
 // ---- network ----
 
+const FETCH_TIMEOUT_MS = 6000;
+
 async function fetchRemote(): Promise<StateSnapshot | null> {
   const res = await fetch('/api/state', {
     headers: { Authorization: `Bearer ${SECRET}` },
+    cache: 'no-store',
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`GET /api/state ${res.status}`);
   const body = (await res.json()) as { snapshot: StateSnapshot | null };
@@ -180,6 +185,8 @@ async function pushNow(): Promise<void> {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SECRET}` },
       body: JSON.stringify(snapshot),
+      cache: 'no-store',
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
 
     if (res.status === 409) {
@@ -222,20 +229,23 @@ export function initSync(): void {
 }
 
 /**
- * On launch, reconcile local with the server backup:
- *  - no remote yet → push local (establish the backup)
+ * Reconciles local with the server backup. Returns true if it replaced local data with a server
+ * snapshot (a caller showing already-rendered screens may want to refresh after that) — bounded
+ * by a network timeout, so it can never hang the caller indefinitely.
+ *
+ *  - no remote yet → push local (establish the backup), nothing to apply
  *  - local has no activity but remote does → restore from remote (new device / wiped storage)
  *  - both have activity → newer-by-timestamp wins (last-write-wins); if the local timestamp is
- *    missing we keep local and push, never letting an emptier/older remote clobber real data
- *  - otherwise → push local
+ *    missing we keep local, never letting an emptier/older remote clobber real data
+ *  - otherwise → push local, but only if something actually changed since the last sync
  */
-export async function syncOnStart(): Promise<void> {
-  if (!SECRET) return;
+export async function syncOnStart(): Promise<boolean> {
+  if (!SECRET) return false;
   try {
     const remote = await fetchRemote();
     if (!remote) {
       await pushNow();
-      return;
+      return false;
     }
 
     const localActive = await localHasActivity();
@@ -244,26 +254,28 @@ export async function syncOnStart(): Promise<void> {
 
     if (!localActive && remoteActive) {
       await applySnapshot(remote);
-    } else if (
-      localActive &&
-      remoteActive &&
-      localMutatedAt > 0 &&
-      remote.updatedAt > localMutatedAt
-    ) {
+      return true;
+    }
+    if (localActive && remoteActive && localMutatedAt > 0 && remote.updatedAt > localMutatedAt) {
       await applySnapshot(remote); // worked on another device more recently — accepted LWW
-    } else {
+      return true;
+    }
+
+    if (localMutatedAt > readNumber(LS_SYNCED_AT)) {
       await pushNow();
     }
+    return false;
   } catch (e) {
     console.error('Initial sync failed (working offline is fine)', e);
+    return false;
   }
 }
 
 /** Manual "Sync now" — flush any pending push immediately, then reconcile with the server. */
-export async function syncNow(): Promise<void> {
+export async function syncNow(): Promise<boolean> {
   if (debounceTimer) {
     clearTimeout(debounceTimer);
     debounceTimer = null;
   }
-  await syncOnStart();
+  return syncOnStart();
 }
